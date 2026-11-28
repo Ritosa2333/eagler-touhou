@@ -16,9 +16,10 @@ export function MastheadInbox({compact, interactive, homeHref, assetUrl, nativeL
   const {t} = useLocale();
   const {state} = useMessageIdentity(interactive);
   const username = state.status === 'member' ? state.user.username : undefined;
-  const feed = usePublishedAnnouncements(username, interactive);
+  const feed = usePublishedAnnouncements(username, interactive && state.status === 'member');
   const messages = useInboxSummary(username);
   const unread = useAnnouncementUnread(feed?.items);
+  if (state.status !== 'member') return null;
   const useAppLink = !nativeLinks && interactive;
   const Link = useAppLink ? AppLink : 'a';
   const entryLink = useAppLink ? {rememberEntry:true} : {};
@@ -32,12 +33,12 @@ export function MastheadInbox({compact, interactive, homeHref, assetUrl, nativeL
       const contents = <><Icon aria-hidden="true"/>{count > 0 && <small aria-hidden="true">{count}</small>}</>;
       const accessible = count ? `${label} (${count})` : label;
       return compact || !interactive
-        ? <Button key={id} asChild className="masthead-action masthead-inbox-action" variant="ghost" size="icon">
+        ? <Button key={id} asChild className="masthead-action masthead-inbox-action" variant="ghost" size={compact ? 'icon' : 'icon-sm'}>
           <Link href={href} {...entryLink} aria-label={accessible} data-unread={count > 0}>{contents}</Link>
         </Button>
         : <Popover.Root key={id}>
           <MastheadTooltip label={label}><Popover.Trigger asChild>
-            <Button variant="ghost" size="icon" className="masthead-action masthead-inbox-action"
+            <Button variant="ghost" size={compact ? 'icon' : 'icon-sm'} className="masthead-action masthead-inbox-action"
               aria-label={accessible} data-unread={count > 0}>{contents}</Button>
           </Popover.Trigger></MastheadTooltip>
           <Popover.Portal container={uiPortalHost()}>

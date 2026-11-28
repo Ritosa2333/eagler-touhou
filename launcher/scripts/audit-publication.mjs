@@ -29,7 +29,7 @@ const publicAssets = new Set([
   'assets/favicon.png',
   ...SITE_BRAND_FACES.map(face=>`assets/brand/${face}.svg`),
   "assets/launcher-background.webp",
-  "assets/launcher-wordmark-dark.png", "assets/launcher-wordmark-light.png",
+  "assets/launcher-wordmark-dark.png", "assets/launcher-wordmark-light.png", "assets/launcher-wordmark.svg",
   ...quickChatVoiceClipAssets,
   "assets/donation.webp",
   "assets/touch-rotate-landscape.webp",

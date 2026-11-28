@@ -1,0 +1,52 @@
+.rating-game-picker.ui-kit-button {
+  flex: none;
+  gap: 5px;
+  padding-inline: 6px;
+}
+
+.rating-game-picker-icon {
+  flex: none;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.rating-game-menu {
+  width: max-content;
+  max-width: var(--radix-dropdown-menu-content-available-width, calc(100vw - 24px));
+}
+
+.rating-game-strip {
+  align-items: flex-start;
+  padding: 0 4px 4px;
+}
+
+.rating-game-strip > [role='group'] {
+  flex: none;
+  white-space: nowrap;
+}
+
+.rating-game-strip > [role='group'] + [role='group'] {
+  border-inline-start: 1px solid var(--kit-border);
+  margin-inline-start: 4px;
+  padding-inline-start: 8px;
+}
+
+.rating-game-tiles {
+  display: flex;
+  gap: 4px;
+}
+
+.rating-game-tile.ui-list-popup-item {
+  flex: none;
+  flex-direction: column;
+  justify-content: center;
+  width: 48px;
+  gap: 2px;
+  padding: 4px 0;
+  border: 1px solid transparent;
+}
+
+.rating-game-tile[data-state='checked'] {
+  border-color: var(--book-border);
+  background: var(--book-accent-soft);
+}

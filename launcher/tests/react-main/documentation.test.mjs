@@ -10,7 +10,7 @@ import {createElement} from 'react';
 const project=fileURLToPath(new URL('../../',import.meta.url));
 let work,api;
 beforeAll(async()=>{
-  work=await mkdtemp(resolve(project,'.cache/documentation-test-'));
+  work=await mkdtemp(resolve(process.env.EAGLER_TEST_OUTPUT_DIR || project,'.cache/documentation-test-'));
   const outfile=resolve(work,'api.mjs');
   await build({absWorkingDir:project,stdin:{resolveDir:project,loader:'ts',contents:`export * from './app/components/documents/content.tsx';export * from './app/components/documents/catalog.ts';export * from './scripts/ui-rewrite/document-history.ts';export * from './src/launcher/i18n.mts';`},outfile,bundle:true,packages:'external',platform:'node',format:'esm',jsx:'automatic',logLevel:'silent'});
   api=await import(pathToFileURL(outfile).href);
@@ -57,7 +57,12 @@ test('all documentation languages render their authored headings and preserve Ab
       assert.equal(toc[0].title,{'zh-CN':'我们收集哪些信息',en:'What we collect',ja:'収集する情報'}[locale]);
       assert.doesNotMatch(html,/<(?:blockquote|em)\b/);
     }
-    if(page.id==='about')assert.ok(html.includes('mailto:ayanews@outlook.com'));
+    if(page.id==='about'){
+      assert.ok(html.includes('mailto:ayanews@outlook.com'));
+      for(const invite of ['https://qm.qq.com/q/eeUrxIltug','https://qm.qq.com/q/XFO8KoiegU']){
+        assert.ok(html.includes(`href="${invite}" target="_blank" rel="noopener noreferrer"`), locale);
+      }
+    }
     if(page.id==='firstUse'){
       assert.equal([...html.matchAll(/role="note"/g)].length,2,locale);
       assert.doesNotMatch(html,/\[!NOTE\]/);

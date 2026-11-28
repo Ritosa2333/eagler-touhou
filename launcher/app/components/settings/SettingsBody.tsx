@@ -10,7 +10,6 @@ import { isMusicMode } from '../../../src/launcher/game-preferences.mts';
 import { resolveMusicAvailability } from '../../../src/launcher/music-availability.mts';
 import type { GameSettingsModel, SettingsDisclosureState } from '../../models/game-settings';
 import { useLocale } from '../../i18n';
-import { useCompactNavigation } from '../../navigation/navigation-motion';
 import { OptionsGroup, OptionsGroupHeading } from './OptionsGroup';
 import { InputSettings } from './InputSettings';
 import { GameAudioFields, QuickChatVolumeField } from './GameAudioControls';
@@ -48,7 +47,6 @@ export function SettingsBody({
     actions.externalMidi.getSnapshot,
   );
   const { t } = useLocale();
-  const compact = useCompactNavigation();
   const midiVisible = !!state && PRODUCT_GAMES[state.gameId].musicCapabilities.midi && state.music === 'midi';
   useEffect(() => {
     if (!midiVisible && midi.enabled) void actions.externalMidi.setEnabled(false).catch(actions.reportError);
@@ -56,7 +54,7 @@ export function SettingsBody({
   if (!state) return null;
   const gamePage = !!gamePageOptions;
   const { context, options, multiplayer } = state,
-    disclosure = gamePageOptions ? {display: compact, touch: false, files: false, audio: false, advanced: false, ...gamePageOptions.disclosures} : state.disclosure,
+    disclosure = gamePageOptions ? {display: true, touch: true, files: true, audio: true, advanced: true, ...gamePageOptions.disclosures} : state.disclosure,
     mobileOpen = disclosure.touch,
     product = PRODUCT_GAMES[state.gameId];
   const setDisclosure = (name: keyof typeof disclosure, open: boolean) => {
@@ -392,6 +390,7 @@ export function SettingsBody({
       {display}
       {(actions.keyboard || actions.gamepad) && (
         <InputSettings
+            defaultOpen={gamePage}
           keyboard={state.gameId === 'th075' ? actions.th075Keyboard : state.gameId === 'th19' ? actions.th19Keyboard : actions.keyboard}
           gamepad={state.gameId === 'th19' ? actions.th19Gamepad : actions.gamepad}
           th19={state.gameId === 'th19'}

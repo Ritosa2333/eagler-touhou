@@ -28,6 +28,19 @@ export function requiresLocalGameData(snapshot: Pick<MetadataSnapshot, 'siteMani
   return snapshot.siteManifest?.shared.resourceMode === 'import' ||
     (productRequiresImport(game) && !snapshot.releaseCatalog?.games[game]);
 }
+/** Only data that acquisition can commit to the Package Store belongs in the download queue. */
+export function canInstallGameData({siteManifest, releaseCatalog}: Pick<MetadataSnapshot, 'siteManifest' | 'releaseCatalog'>, game: GameId): boolean {
+  const mode = siteManifest?.shared.resourceMode;
+  return mode !== 'import' && (!!releaseCatalog?.games[game] ||
+    !!siteManifest?.games[game]?.gameData.source && PRODUCT_GAMES[game].dataProvider === 'retail-memory' &&
+      (siteManifest.profile === 'web-development' || mode !== 'external' && !productRequiresImport(game)));
+}
+/** Older hosted runtimes may already carry the DATA through their own preload. */
+export function hasBundledGameData({siteManifest, releaseCatalog}: Pick<MetadataSnapshot, 'siteManifest' | 'releaseCatalog'>, game: GameId): boolean {
+  const hosted = siteManifest?.games[game];
+  return !!hosted && siteManifest?.shared.resourceMode === 'hosted' && !releaseCatalog?.games[game] &&
+    PRODUCT_GAMES[game].dataProvider === 'emscripten-preload' && !hosted.gameData.source && !productRequiresImport(game);
+}
 export interface MetadataServiceOptions {
   /** Deployment document/root URL, not a selected client route. */
   baseUrl: string;

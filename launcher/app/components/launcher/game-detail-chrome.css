@@ -62,7 +62,7 @@
   .game-detail-metrics dl { display: flex; flex-wrap: wrap; gap: 4px 18px; margin: 0; font-size: 12px; }
   .game-detail-metrics dd { margin: 1px 0 0; font-variant-numeric: tabular-nums; }
   .game-detail-hero .launch-actions { display: contents; }
-  .game-detail-hero .launch:not(.launch-secondary) svg { fill: currentColor; }
+  .game-detail-hero .launch[data-action-icon="play"] svg { fill: currentColor; }
   .book-game-detail-statistics { min-width: 0; container-type: inline-size; }
   .game-detail-section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-block-end: 12px; }
   :is(.game-detail-section-heading, .game-detail-friends) h2 { margin: 0; font: 700 19px/1.4 var(--kit-font-work); }
@@ -77,7 +77,7 @@
   :is(.tools[data-options-panel] .game-settings-page, .book-game-detail-settings) .options-group { padding: 0; }
 }
 
-.game-detail-hero .ui-kit-button.launch:not(.launch-secondary) { background: #95c796; color: #132c1c; font-weight: 700; }
+.game-detail-hero .ui-kit-button.launch:not(.launch-secondary) { --launch-meter-track: #bdc9bf; --launch-meter-fill: #6fbb81; background: #95c796; color: #132c1c; font-weight: 700; }
 .game-detail-hero .ui-kit-button[data-variant="outline"] { background: #14131f42; border-color: #fff5; color: inherit; }
 .game-detail-hero .ui-kit-button[data-variant="outline"]:hover { background: #ffffff26; }
 .game-detail-hero .game-detail-favorite[aria-pressed="true"] { color: #f5d278; }

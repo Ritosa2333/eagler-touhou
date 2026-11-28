@@ -38,10 +38,19 @@ try {
       railMarker: railCover && offset(el.parentElement.querySelector('.book-lobby-sidebar-check')),
       railFavorite: railCover && offset(el.parentElement.querySelector('.book-favorite'))};
   });
+  const toolbarFills = {};
   for (const theme of ['dark', 'light']) {
     await page.evaluate(theme => document.documentElement.dataset.bookTheme = theme, theme);
     await page.mouse.move(0, 0); await settle(); await settle();
-    for (const selector of ['.book-room-filter-trigger', '.lobby-game-sidebar [data-book-category="original"]', '#refreshRooms', '.lobby-game-sidebar .book-rail-game', '#hoverJoin']) {
+    const toolbar = await page.$$eval('.lobby-actions .lobby-button, .book-room-filter-trigger', buttons => buttons
+      .filter(button => button.getBoundingClientRect().width > 0).map(button => {
+        const css = getComputedStyle(button), rect = button.getBoundingClientRect();
+        return {background: css.backgroundColor, width: rect.width, height: rect.height};
+      }));
+    assert.ok(toolbar.length >= 3);
+    assert.ok(toolbar.every(control => control.height === 44), 'main room controls retain their original touch targets');
+    toolbarFills[theme] = toolbar[0].background;
+    for (const selector of ['.book-room-filter-trigger', '#lobbyGuideOpen', '#lobbyNetworkCheck', '.lobby-game-sidebar [data-book-category="original"]', '#refreshRooms', '.lobby-game-sidebar .book-rail-game', '#hoverJoin']) {
       await page.mouse.move(0, 0); await settle();
       const before = await style(selector);
       await page.hover(selector); await settle();
@@ -50,8 +59,8 @@ try {
       assert.equal(after.width, before.width); assert.equal(after.height, before.height);
       assert.equal(after.pressed, before.pressed); assert.equal(after.transform, 'none');
       if (before.railCover !== null) {
-        assert.equal(after.railCover - before.railCover, 3, 'the artwork follows the shared list hover');
-        assert.equal(after.railMarker - before.railMarker, 3, 'the selection mark follows the artwork');
+        assert.ok(Math.abs(after.railCover - before.railCover - .75) < .02, 'the artwork follows the shared micro nudge');
+        assert.equal(after.railMarker, before.railMarker, 'the separate selection target stays fixed');
         assert.equal(after.railFavorite, before.railFavorite, 'the favorite remains at the row edge');
       }
     }
@@ -67,6 +76,17 @@ try {
     assert.equal((await style('#hoverJoin')).transform, 'none', 'No legacy scale on press');
     await page.mouse.up();
   }
+  assert.notEqual(toolbarFills.dark, toolbarFills.light);
+  const openFilters = async (columns) => {
+    await page.click('.book-room-filter-trigger');
+    const popup = await page.waitForSelector('.book-room-filter-popup[data-state="open"]', {visible:true});
+    await popup.evaluate(element => Promise.allSettled(element.getAnimations().map(animation => animation.finished)));
+    assert.equal(await popup.$eval('.book-room-filter-groups', el => getComputedStyle(el).gridTemplateColumns.split(' ').length), columns);
+    assert.ok(await popup.evaluate(el => el.getBoundingClientRect().left >= 0 && el.getBoundingClientRect().right <= innerWidth));
+  };
+  await openFilters(3);
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('.book-room-filter-popup', {hidden:true});
   await page.emulateMediaFeatures([{name: 'prefers-reduced-motion', value: 'reduce'}]);
   const row = '.lobby-game-sidebar .book-rail-game';
   await page.mouse.move(0, 0); await settle();
@@ -76,10 +96,39 @@ try {
   await page.setViewport({width: 390, height: 844, isMobile: true, hasTouch: true});
   await page.waitForSelector('.book-lobby-picker-trigger', {visible:true});
   assert.ok(await page.$eval('[data-lobby-icon] .book-lobby-cover', el => parseFloat(getComputedStyle(el).transitionDuration) < .00001));
-  await page.click('.book-room-filter-trigger');
-  await page.waitForSelector('[data-room-filter="open"]', {visible:true});
-  await page.click('[data-room-filter="open"]');
-  assert.equal(await page.$eval('.book-room-filter-trigger', el => el.dataset.active), 'true');
+  const filterTrigger = '.book-room-filter-trigger';
+  await page.mouse.move(0, 0); await settle();
+  const idleFilter = await style(filterTrigger);
+  await openFilters(2);
+  await settle();
+  assert.notEqual((await style(filterTrigger)).background, idleFilter.background, 'an open filter is highlighted');
+  const openOption = '[data-room-facet="status"][data-room-value="open"]';
+  const waitingOption = '[data-room-facet="status"][data-room-value="waiting"]';
+  await page.waitForSelector(openOption, {visible:true});
+  await page.click(openOption);
+  await page.click(waitingOption);
+  assert.equal(await page.$eval(filterTrigger, el => el.getAttribute('aria-expanded')), 'true');
+  for (const selector of [openOption, waitingOption]) {
+    assert.equal(await page.$eval(selector, el => el.getAttribute('aria-checked')), 'true');
+  }
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('.book-room-filter-popup', {hidden:true});
+  assert.equal(await page.$eval(filterTrigger, el => el.dataset.active), 'true');
+  await page.mouse.move(0, 0); await settle();
+  assert.notEqual((await style(filterTrigger)).background, idleFilter.background, 'an applied filter stays highlighted after closing');
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+  for (const width of [320, 390, 600, 850, 1440]) {
+    await page.setViewport({width, height:844});
+    await page.waitForSelector('.book-room-filter-trigger', {visible:true});
+    const originalLayout = await page.evaluate(() => {
+      const links = document.querySelector('.lobby-intro .lobby-support-links');
+      const tools = document.querySelector('.lobby-room-tools');
+      return {helpVisible: links.getBoundingClientRect().height > 0,
+        fits: tools.getBoundingClientRect().right <= innerWidth + 1,
+        regrouped: !!document.querySelector('.lobby-mobile-links,.lobby-filter-tools')};
+    });
+    assert.ok(originalLayout.helpVisible && originalLayout.fits);
+    assert.equal(originalLayout.regrouped,false,'main keeps help links in their existing location');
+  }
   console.log('PASS: lobby hover in both themes, selected/disabled states, fixed geometry, no scale, reduced motion and narrow filtering');
 } finally {await browser.close();}

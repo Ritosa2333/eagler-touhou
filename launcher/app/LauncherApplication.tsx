@@ -43,7 +43,8 @@ import type { DecisionStore } from './models/decisions';
 import type { TouchLayoutModel } from './models/touch-layout';
 import { SurfaceNavigationProvider, useSurfaceNavigation } from './navigation/surface-navigation';
 import { useSurfaceLayerState } from './navigation/surface-layer';
-import { useCompactNavigation, useNavigationPageMotion } from './navigation/navigation-motion';
+import { useCompactNavigation, usePageEntrance } from './navigation/navigation-motion';
+import { launcherPageContent } from './navigation/page-entrance';
 import { useStoreSelector, shallowEqual } from './shared/react-store';
 import { accountsEnabled } from './release-features';
 import type {LocalSaveReader} from './services/local-save-storage';
@@ -85,6 +86,8 @@ export interface LauncherHost {
   lobbyHref: string;
   masthead: ReactNode;
   librarySearchTarget?: HTMLElement | null;
+  installsPage?: ReactNode;
+  installProgress?: ReactNode;
   launcherPreferences?: LauncherPreferencesProps;
   lobby: LobbyPresentation;
   renderLobby?(props: LobbySurfaceProps): ReactNode;
@@ -161,17 +164,13 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
   const accountPage = accountsEnabled && /\/login\.html\/?$/.test(pathname);
   const profilePage = accountsEnabled && /^(?:\/profile\.html|\/u\/[^/]+)\/?$/.test(pathname);
   const page = section ?? (accountPage ? 'account' : profilePage ? 'profile' : navigation.context);
-  const libraryOrLobby = page === 'library' || page === 'lobby';
-  const contentSelector = page === 'library' ? '.book-content' : page === 'lobby' ? '.lobby-rooms-column' :
-    page === 'profile' ? '.profile-wrap' : undefined;
   const compact = useCompactNavigation();
-  const pageSurface = useNavigationPageMotion(accountPage || profilePage ? pathname : page, {
+  const pageSurface = usePageEntrance(accountPage || profilePage ? pathname : page, {
     reduced: host.lessMotion === true,
-    contentSelector,
-    railSelector: !compact && libraryOrLobby ? '.book-sidebar nav' : undefined,
+    contentSelector: launcherPageContent[page],
   });
   const showLibrary = !accountPage && !profilePage && !section && navigation.context === 'library';
-  const keepLibrary = primary === 'home' || primary === 'lobby';
+  const keepLibrary = primary === 'home' || primary === 'lobby' || section === 'installs';
   const [libraryVisited, setLibraryVisited] = useState(showLibrary);
   useEffect(() => {
     if (showLibrary) setLibraryVisited(true);
@@ -403,6 +402,8 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
           <Suspense fallback={<ProfileLoading/>}><ProfilePage readLocalSaves={host.readLocalSaves} cloudSync={host.cloudSync} watchTh09Replay={host.watchTh09Replay}/></Suspense>
         ) : section === 'announcements' || section === 'messages' ? (
           <MessageCenter section={section} homeHref={host.assetUrl(localeHome(host.locale))} assetUrl={host.assetUrl}/>
+        ) : section === 'installs' ? (
+          host.installsPage
         ) : !showHome && navigation.context === 'lobby' ? (
           host.renderLobby ? (
             host.renderLobby(lobbyProps)
@@ -416,6 +417,8 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
         {(showLibrary || keepLibrary && libraryVisited) && <Activity mode={showLibrary ? 'visible' : 'hidden'}>
           <LibrarySurface
             products={host.products}
+            homeHref={host.assetUrl(localeHome(host.locale))}
+            installProgress={host.installProgress}
             selectedProduct={preview}
             openedProduct={inlineProduct?.id ?? presence.openedProduct}
             onSelect={setPreview}

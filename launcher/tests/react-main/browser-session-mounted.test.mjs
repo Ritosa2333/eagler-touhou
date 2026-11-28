@@ -56,7 +56,7 @@ before(async () => {
   React = await import('react'); ({createRoot, hydrateRoot} = await import('react-dom/client')); ({renderToString} = await import('react-dom/server'));
   ({createMemoryRouter, createBrowserRouter, RouterProvider} = await import('react-router'));
   await mkdir(resolve(project, '.cache'), {recursive: true});
-  work = await mkdtemp(resolve(project, '.cache/react-main-browser-session-'));
+  work = await mkdtemp(resolve(process.env.EAGLER_TEST_OUTPUT_DIR || project, '.cache/react-main-browser-session-'));
   const outfile = resolve(work, 'actual-browser-entry.mjs');
   await build({absWorkingDir: project, stdin: {resolveDir: project, loader: 'ts', contents: `
     export {BrowserLauncher} from './app/BrowserLauncher.tsx';
@@ -370,9 +370,26 @@ async function browserBack() {
       await new Promise(resolve => setTimeout(resolve, 10));
   });
 }
-async function start() {
-  await click('#launch');
-  assert.equal(node('#decisionDialog').open, true, 'main no-music warning gates launch');
+async function requestRuntimeStart() {
+  const session = api.getTestSession();
+  await React.act(async () => {void session.launch(session.settings.getSnapshot().context.productId).catch(session.reportError);});
+  await tick();
+}
+async function start({install = true} = {}) {
+  if (install) {
+    await until(() => !node('#launch').disabled, 'the selected game action is ready');
+    const label = key => api.translate(api.getTestSession().getSnapshot().locale, key);
+    if (node('#launchText').textContent === label('downloadTasks.acquire')) {
+      await click('#launch');
+      await until(() => node('#launchText').textContent === label('action.start') && !node('#launch').disabled,
+        'the explicit installation commits before the separate Start action', 5000);
+    }
+    await click('#launch');
+  } else {
+    // Acquisition races enter the existing runtime owner independently of the install queue UI.
+    await requestRuntimeStart();
+  }
+  await until(() => node('#decisionDialog').open, 'main no-music warning gates launch');
   assert.equal(playerOpen(), false, 'Player stays closed before original input/music confirmation');
   await click('#decisionConfirm');
 }
@@ -411,7 +428,7 @@ for (const {game, touchDevice, rail} of [
 
 for (const exitScenario of ['success', 'error', 'error-on-exit', 'error-without-reason', 'success-with-error-code']) test(`actual BrowserLauncher: original warning, fullscreen, ready/configure/ACK launch and native ${exitScenario} Exit preserve one frame`, async () => {
   const exitStatus=exitScenario.startsWith('success')?'success':'error';
-  const f = await mountBrowser(), frame = node('#gameFrame'), before = currentUrl();
+  const f = await mountBrowser({initial: '/?game=th06&keep=a%20b&lang=en'}), frame = node('#gameFrame'), before = currentUrl();
   await openGameSettingsGroup('mobileOptions');
   await start(); await until(() => commands().includes('launch'), 'actual Runtime issues launch');
   assert.equal(playerOpen(), true); assert.equal(node('#gameFrame'), frame); assert.equal(env.document.querySelectorAll('iframe').length, 1);
@@ -902,7 +919,7 @@ const storageImportCases = [
   {kind: 'replay', game: 'th06', name: 'th6_01.rpy', path: 'replay/th6_01.rpy', accept: '.zip,.rpy,.rpyx,.th01r,.th02r,.th03r,.th04r,.rep'},
 ];
 async function runningStorageImport({kind, game}) {
-  const f = await mountBrowser({initial: `/?game=${game}&keep=a%20b`, host: subsetHost([game], {multiplayer: false}), seedPackages: game === 'th10' ? [game] : [], seedStorage(storage) {
+  const f = await mountBrowser({initial: `/?game=${game}&keep=a%20b&lang=en`, host: subsetHost([game], {multiplayer: false}), seedPackages: game === 'th10' ? [game] : [], seedStorage(storage) {
     storage.values.set(api.gamePreferenceStorageKey(game), JSON.stringify({music: 'none', options: {touchEnabled: false, thpracEnabled: false}}));
   }});
   await openGameSettingsGroup('fileOptions');
@@ -1020,7 +1037,7 @@ for (const {launchedGame, phase} of [{launchedGame: 'th06', phase: 'running'}, {
     await until(() => held, 'first queued import waits at the real acquisition storage read');
     assert.equal(session.getRuntime().getSnapshot().epoch, null); assert.equal(commands().includes('write'), false);
     if (phase === 'loading') f.autoReady = false;
-    await start(); await until(() => session.getRuntime().getSnapshot().phase === phase, 'newer accepted Start acquires its Runtime while old file preparation is outside native ownership');
+    await start({install:false}); await until(() => session.getRuntime().getSnapshot().phase === phase, 'newer accepted Start acquires its Runtime while old file preparation is outside native ownership');
     const running = session.getRuntime().getSnapshot(), beforeRelease = [...f.order], previous = currentUrl(), transfer = session.transfer.getSnapshot();
     assert.equal(running.launched, phase === 'running'); assert.equal(playerOpen(), true);
     f.autoReady = true; // Only subsequent navigations auto-ready; the held document still waits.
@@ -1120,7 +1137,7 @@ for (const oldResult of ['success', 'failure', 'native-error']) test(`actual Bro
   try {
     await React.act(async () => {imported = session.importFile('replay', new NativeFile([new Uint8Array([1])], 'th6_01.rpy'), 'th06').then(() => {outcome = 'success';}, error => {outcome = error.message;});});
     await until(() => held, 'old Replay import waits outside native ownership');
-    await start();
+    await start({install:false});
     await React.act(async () => {await edge.waitForRequest('th10');});
     await until(() => edge.requests.has('th10') && !session.transfer.getSnapshot().hidden, 'new Start owns real package acquisition');
     assert.equal(session.getRuntime().getSnapshot().epoch, null);
@@ -1160,10 +1177,10 @@ for (const startState of ['none', 'warning', 'accepted']) test(`actual BrowserLa
     await React.act(async () => {await edge.waitForRequest('th10', preparing);});
     await until(() => !node('#transferCancel').hidden, 'file task owns an actual cancellable package acquisition');
     if (newerStart) {
-      await start(); await React.act(async () => {await edge.waitForRequest('th11');});
+      await start({install:false}); await React.act(async () => {await edge.waitForRequest('th11');});
       await until(() => session.transfer.getSnapshot().label.startsWith('th11 '), 'new Start owns the visible network request');
     }
-    if (startState === 'warning') {await click('#launch'); assert.equal(node('#decisionDialog').open, true); await click('#decisionCancel');}
+    if (startState === 'warning') {await requestRuntimeStart(); await until(() => node('#decisionDialog').open, 'the runtime Start warning is visible'); await click('#decisionCancel');}
     assert.equal(session.getRuntime().getSnapshot().epoch, null); assert.equal(node('#transferCancel').hidden, false);
     const cancelledGame = newerStart ? 'th11' : 'th10';
     assert.equal(edge.requests.get(cancelledGame).released, false, 'the visible acquisition remains held until the actual Cancel click');
@@ -1192,7 +1209,7 @@ test('actual BrowserLauncher: queued import captured before held fullscreen cann
       second = session.importFile('replay', new NativeFile([new Uint8Array([2])], 'th6_02.rpy'), 'th06').catch(error => error);
     });
     await until(() => calls === 1, 'first queued import waits before native ownership');
-    await start();
+    await start({install:false});
     await React.act(async () => {firstRead(); assert.equal(await first, undefined);});
     await until(() => calls === 2, 'second older import begins preparation during newer fullscreen wait');
     assert.equal(session.getRuntime().getSnapshot().epoch, null);
@@ -1227,7 +1244,7 @@ for (const newerStart of [false, true]) test(`actual BrowserLauncher: authentica
   try {
     await React.act(async () => {imported = session.importFile('replay', new NativeFile([new Uint8Array([1])], 'th6_01.rpy'), 'th06').then(() => {outcome = 'success';}, error => {outcome = error;});});
     await until(() => held, 'file preparation paused before native ownership');
-    if (newerStart) {await start(); await until(() => edge.requests.has('th10') && !session.transfer.getSnapshot().hidden, 'newer acquisition owns transfer');}
+    if (newerStart) {await start({install:false}); await until(() => edge.requests.has('th10') && !session.transfer.getSnapshot().hidden, 'newer acquisition owns transfer');}
     assert.equal(playerOpen(), true);
     const transfer = session.transfer.getSnapshot();
     await React.act(async () => {releaseRead();});
@@ -1274,17 +1291,43 @@ function fixtureDataLayout(game) {
     : `sha256-${'b'.repeat(64)}`;
 }
 
-function importPackageFile(game = 'th06') {
+function importPackageFile(game = 'th06', gameVersion) {
   const data = new Uint8Array([1, 2, 3]), hash = createHash('sha256').update(data).digest('hex');
   const dataTarget=api.PRODUCT_GAMES[game].package.dataTarget,dataSource=dataTarget.slice(1);
   const files = Object.fromEntries([['game-data', dataSource, dataTarget], ['font', 'msgothic.ttc', '/msgothic.ttc'], ['unicode', 'unifont.otf', '/unifont.otf']]
     .map(([id, source, target]) => [id, {source, target, revision: `${id}-r1`, bytes: data.length, sha256: hash}]));
-  const descriptor = {schema: 'eagler-touhou/package/1', game, revision: 'synthetic-import-r1',
+  const descriptor = {schema: 'eagler-touhou/package/1', game, gameVersion, revision: 'synthetic-import-r1',
     runtimeRequirement: {protocol: 'eagler-touhou/1', target: game, dataFile: 'game-data', dataLayout: fixtureDataLayout(game)},
     files, base: {files: ['game-data', 'font', 'unicode']}, components: {}};
   const archive = zipSync({'package.json': strToU8(JSON.stringify(descriptor)), [dataSource]: data, 'msgothic.ttc': data, 'unifont.otf': data}, {level: 0});
   return new NativeFile([archive], `${game}.zip`, {type: 'application/zip'});
 }
+
+test('actual BrowserLauncher: downloads and add-ons lists local visual packs and shares game version preferences', async () => {
+  await mountBrowser({initial: '/en.html', host: subsetHost(['th06', 'th07', 'th08']), seedPackages: ['th08']});
+  const session = api.getTestSession();
+  assert.equal(env.document.querySelector('.game-install-shortcut'), null, 'no progress shortcut while idle');
+  await click('.book-sidebar-footer a[href*="section=installs"]');
+  await until(() => env.document.querySelector('.game-install-page .beauty-packs-empty'), 'empty visual packs section');
+  await React.act(async () => {
+    for (const game of ['th06', 'th07']) await session.acquisition.importPackage({game, file: importPackageFile(game, 'beauty')});
+  });
+  const packs = () => node('.game-install-page .beauty-packs');
+  const toggles = () => [...packs().querySelectorAll('[role="switch"]')].map(item => item.getAttribute('aria-checked'));
+  await until(() => packs().querySelectorAll('[role="switch"]').length === 2, 'only locally installed visual packs');
+  assert.deepEqual(toggles(), ['false', 'false']);
+  assert.equal(packs().textContent.includes('th08'), false, 'an installed original does not count as a visual pack');
+  await click('.beauty-packs-tools button:first-child');
+  assert.deepEqual(toggles(), ['true', 'true']);
+  assert.equal(session.settings.getGameVersion('th07'), 'beauty');
+  await click('.beauty-packs-list li:first-child [role="switch"]');
+  assert.deepEqual(toggles(), ['false', 'true']);
+  assert.equal(session.settings.getGameVersion('th06'), 'original');
+  await click('.beauty-packs-tools button:last-child');
+  assert.deepEqual(toggles(), ['false', 'false']);
+  assert.equal(session.settings.getGameVersion('th07'), 'original');
+});
+
 async function selectImport(file) {
   await click('#transferImport');
   const input = node('#fileInput'); assert.equal(input.accept, '.zip,.dat,application/zip');
@@ -1292,7 +1335,7 @@ async function selectImport(file) {
   await React.act(async () => {input.dispatchEvent(new env.window.Event('change', {bubbles: true}));}); await tick();
 }
 
-test('actual BrowserLauncher: an import-only title starts from a published package', async () => {
+test('actual BrowserLauncher: a published package is acquired before an explicit Start', async () => {
   const game = 'hsob';
   const {descriptor} = await api.parsePackageZip(importPackageFile(game));
   const host = subsetHost([game], {multiplayer: false});
@@ -1308,7 +1351,10 @@ test('actual BrowserLauncher: an import-only title starts from a published packa
     if (url.pathname.endsWith('/hsob.package.json')) return Response.json(descriptor);
     if (Object.values(descriptor.files).some(file => url.pathname === '/' + file.source)) return new Response(new Uint8Array([1, 2, 3]));
   }});
-  await until(() => node('#launchText').textContent === 'Start game', 'published resources enable Start');
+  await until(() => node('#launchText').textContent === 'Install game' && !node('#launch').disabled, 'published resources enable Install game');
+  await click('#launch');
+  await until(() => node('#launchText').textContent === 'Start game', 'installed resources enable Start');
+  assert.equal(playerOpen(), false, 'acquiring resources does not open the player');
   await start();
   await until(() => commands().includes('launch'), 'published data launches without a manual import');
   assert.equal(node('#gameDataImportWindow').hidden, true);
@@ -1316,9 +1362,9 @@ test('actual BrowserLauncher: an import-only title starts from a published packa
   assert.deepEqual(f.dataReads, [[1, 2, 3]]);
 });
 
-test('actual BrowserLauncher: import-only Start → invalid file → valid canonical ZIP waits for another explicit Start', async () => {
+test('actual BrowserLauncher: import-only installation → invalid file → valid canonical ZIP waits for an explicit Start', async () => {
   const f = await mountBrowser({initial: '/en.html?game=th06', resourceMode: 'import'});
-  assert.equal(node('#launchText').textContent, 'Import game files');
+  await until(() => node('#launchText').textContent === 'Install game' && !node('#launch').disabled, 'import-only installation is ready');
   await click('#launch'); await until(() => !node('#gameDataImportWindow').hidden, 'main import-required window opens');
   assert.equal(node('#decisionDialog').open, false); assert.equal(playerOpen(), false); assert.equal(f.navigations.length, 0);
   await selectImport(new NativeFile([], 'empty.zip'));
@@ -1932,7 +1978,7 @@ for (const boundary of ['warning', 'fullscreen']) test(`actual BrowserLauncher: 
     storage.values.set(api.gamePreferenceStorageKey('th07'), JSON.stringify({music: 'none', options: {touchEnabled: false}}));
   }});
   const frame = node('#gameFrame');
-  await click('#launch');
+  await requestRuntimeStart();
   assert.equal(node('#decisionDialog').open, true); assert.equal(playerOpen(), false);
   let releaseFullscreen;
   if (boundary === 'fullscreen') {
@@ -1963,7 +2009,7 @@ test('actual BrowserLauncher: Host fallback checks cloud saves for the game that
   }});
   f.fullscreenReady = new Promise(resolve => {releaseFullscreen = resolve;});
   try {
-    await click('#launch');
+    await requestRuntimeStart();
     assert.equal(node('#decisionDialog').open, true);
     await click('#decisionConfirm');
     await until(() => f.order.includes('fullscreen-enter'), 'Player waits for fullscreen');
@@ -1982,12 +2028,12 @@ test('actual BrowserLauncher: Host fallback checks cloud saves for the game that
 test('actual BrowserLauncher: late Host fallback before Start uses the current music warning without a touch warning', async () => {
   env.window.AudioContext = class {};
   try {
-    const f = await mountBrowser({initial: '/?game=th07', holdHost: true, host: subsetHost(['th06']), seedStorage(storage) {
+    const f = await mountBrowser({initial: '/?game=th07&lang=en', holdHost: true, host: subsetHost(['th06']), seedStorage(storage) {
       storage.values.set(api.gamePreferenceStorageKey('th07'), JSON.stringify({music: 'midi', musicPreferenceExplicit: true, options: {touchEnabled: false}}));
       storage.values.set(api.gamePreferenceStorageKey('th06'), JSON.stringify({music: 'none', musicPreferenceExplicit: true, options: {touchEnabled: false}}));
     }});
     await click('#gameSettingsOpen');
-    await click('#advancedOptions .options-group-head');
+    await openGameSettingsGroup('advancedOptions');
     assert.equal(node('#musicSelect').value, 'midi');
     await acceptHeldHost(f);
     assert.equal(node('#musicSelect').value, 'none');
@@ -3005,11 +3051,13 @@ test('Replay Options close during native preload cancels once and the next Back 
   assert.equal(session.getSnapshot().playerOpen, true);
   assert.equal(session.getSnapshot().replayViewer, true);
   assert.equal(session.getRuntime().getSnapshot().ready, false);
+  assert.equal(node('#player .game-viewport .loading-activity').dataset.loadingContext, 'solo');
 
   await click('.replay-workspace-header .replay-back');
   await until(() => !env.document.querySelector('.replay-file-browser') && !session.getSnapshot().replayViewer &&
     f.router.state.location.state.launcherSurfaceEntry?.surface === 'options', 'closing the loading manager returns to its Options carrier');
   assert.equal(f.router.state.location.state.launcherSurfaceEntry.parentKey, parentKey);
+  assert.equal(env.document.querySelector('#player .game-viewport .loading-activity'), null);
   assertReplayPreloadRetired(session, f);
 
   await click('[data-book-category="all"]');
@@ -3343,6 +3391,7 @@ for (const mobileDevice of [false,true]) for (const game of spectatorGames) {
    assert.equal(f.native.options.netplaySpectator,true);
    assert.equal(f.order.filter(value=>value==='fullscreen-enter').length,fullscreenRequests,'spectating never requests fullscreen automatically');
    assert.equal(node('#player').classList.contains('room-workspace'),true,'the running spectator remains in the room player');
+   assert.equal(node('.room-workspace-preparation .loading-activity').dataset.loadingContext, 'multiplayer');
    assert.equal(env.document.querySelector('#touchHud'),null,'spectating has no gameplay touch buttons');
    assert.equal(env.document.querySelector('#touchEscape'),null);
    assert.equal(env.document.querySelector('#touchHelpOpen'),null);
@@ -3621,7 +3670,7 @@ for (const device of [
 for(const presented of [true,false])test(`room ready requires native game menu presentation (${presented?'presented':'rejected'})`,async()=>{
  const host=developmentAcquisitionHost(['th09']);host.shared.netplayRelay='wss://relay.invalid/socket';
  const invite=api.encodeRoomInvite({g:'th09mp',r:'1234',f:true,a:'join',s:true});
- const f=await mountBrowser({initial:'/?j='+invite,host,autoReady:false,socketBoundary:true,seedPackages:['th09']});
+ const f=await mountBrowser({initial:'/?j='+invite+'&lang=en',host,autoReady:false,socketBoundary:true,seedPackages:['th09']});
  const session=api.getTestSession();
  await until(()=>!!f.native?.envelope,'native program loading',15_000);f.holdRoomPreview=true;
  await React.act(async()=>f.native.emit('ready',{roomPreview:true}));
@@ -3637,26 +3686,109 @@ for(const presented of [true,false])test(`room ready requires native game menu p
  else assert.notEqual(node('#mpRoomResourceLabel').textContent,'Game loaded');
 });
 
-test('room resources can become ready when the Runtime has no native lobby preview',async()=>{
+test('room loading stays visible until the initial roster sync when resources are already ready',async()=>{
  const host=developmentAcquisitionHost(['th09']);host.shared.netplayRelay='wss://relay.invalid/socket';
  const invite=api.encodeRoomInvite({g:'th09mp',r:'1234',f:true,a:'join',s:true});
  const f=await mountBrowser({initial:'/?j='+invite,host,autoReady:false,socketBoundary:true,seedPackages:['th09']});
  const session=api.getTestSession();
  await until(()=>!!f.native?.envelope,'native program loading',15_000);
+ const loader=node('.room-workspace-preparation .loading-activity');
+ assert.equal(loader.dataset.loadingContext,'multiplayer');
+ assert.ok(loader.querySelector('[data-loading-scene]'));
+ assert.ok(loader.querySelector('.loading-activity-tip span').textContent);
  f.holdRoomPreview=true;
  await React.act(async()=>f.native.emit('ready'));
  await until(()=>session.room.service.getSnapshot().preparation?.status==='ready','prepared without a title preview');
  assert.equal(session.getRuntime().getSnapshot().phase,'prepared');
  assert.equal(f.outbound.some(message=>message.command==='prepare-room'),false);
+ assert.equal(node('.room-workspace-preparation .loading-activity'),loader);
+ const waiting=session.room.service.getSnapshot().room;
+ assert.equal(waiting.synced,false);
+ assert.equal(node('#mpRoomConnection').textContent,api.translate(session.getSnapshot().locale,
+  waiting.connection === 'reconnecting' ? 'multiplayer.reconnecting' : 'multiplayer.connectingRoom'));
+ const socket=f.sockets.at(-1);
+ await React.act(async()=>socket.open());
+ assert.equal(node('#mpRoomConnection').textContent,api.translate(session.getSnapshot().locale,'multiplayer.syncingMembers'));
+ await React.act(async()=>socket.message({type:'state',room:{
+  code:'1234',playerCount:2,difficulty:1,phase:'lobby',inputDelay:0,startSerial:0,seats:[null,null],spectators:[],
+ }}));
+ assert.equal(session.room.service.getSnapshot().room.synced,true);
+ assert.equal(loader.isConnected,false,'the initial room snapshot removes the animation');
 });
 
 test('ordinary game loading reports success only after its first frame',async()=>{
  const f=await mountBrowser(),session=api.getTestSession();
+ const ready = api.translate(session.getSnapshot().locale,'runtime.readyStatus');
  await start();await until(()=>session.getRuntime().getSnapshot().launched,'game acknowledged launch');
  assert.equal(session.getRuntime().getSnapshot().firstFrame,false);
- assert.doesNotMatch(node('#playerStatus').textContent,/^(Ready|Running)$/);
+ assert.notEqual(node('#playerStatus').textContent,ready);
+ const cover = node('#player .player-loading-cover');
+ assert.ok(cover.querySelector('[data-loading-scene]'));
+ assert.ok([...cover.querySelectorAll('.loading-scene-portrait')].some(image=>image.getAttribute('src')));
+ assert.ok(cover.querySelector('.loading-activity-tip span')?.textContent);
  await React.act(async()=>f.native.emit('first-frame'));
- assert.equal(session.getRuntime().getSnapshot().firstFrame,true);assert.equal(node('#playerStatus').textContent,'Ready');
+ assert.equal(session.getRuntime().getSnapshot().firstFrame,true);assert.equal(node('#playerStatus').textContent,ready);
+ assert.equal(cover.isConnected,false,'the loader leaves when a real frame arrives');
+});
+
+test('TH09 native title room start keeps its loading cover until the gameplay path is ready',async()=>{
+ const host=developmentAcquisitionHost(['th09']);host.shared.netplayRelay='wss://relay.invalid/socket';
+ const f=await mountBrowser({initial:'/?game=th09',host,socketBoundary:true,seedPackages:['th09'],seedStorage(storage){
+  for(const product of ['th09','th09mp'])storage.values.set(api.gamePreferenceStorageKey(product),JSON.stringify({music:'none'}));
+ }});
+ const session=api.getTestSession();
+ await until(()=>node('#launchText').textContent===api.translate(session.getSnapshot().locale,'action.start')&&!node('#launch').disabled,'installed TH09 is ready to start');
+ await click('#launch');
+ await until(()=>node('#decisionDialog').open||session.getRuntime().getSnapshot().launched,'ordinary TH09 startup');
+ if(node('#decisionDialog').open)await click('#decisionConfirm');
+ await until(()=>session.getRuntime().getSnapshot().launched,'ordinary TH09 title launched');
+ await React.act(async()=>{
+  f.native.emit('first-frame');f.native.emit('network-request');
+  session.titleNetwork.setCode('1234');session.titleNetwork.join();
+ });
+ await until(()=>f.sockets.length>0,'title room opened');
+ const socket=f.sockets[0],localId=new URL(socket.url).searchParams.get('lobby');
+ const room={code:'1234',playerCount:2,difficulty:1,phase:'lobby',inputDelay:0,adonisMode:0,predictionLimit:8,startSerial:0,
+  seats:[{clientId:localId,name:'A',loadout:0,ready:false},{clientId:'peer',name:'B',loadout:1,ready:false}],spectators:[]};
+ await React.act(async()=>{socket.open();socket.message({type:'state',room});});
+ await until(()=>session.room.service.getSnapshot().preparation?.status==='ready','title room resources ready',15_000);
+ await React.act(async()=>socket.message({type:'start',serial:2,room:{...room,phase:'running',startSerial:2}}));
+ await until(()=>node('#decisionDialog').open||session.getRuntime().getSnapshot().runtimeVariant==='multiplayer','title room starts swapping Runtime');
+ if(node('#decisionDialog').open)await click('#decisionConfirm');
+ await until(()=>session.getRuntime().getSnapshot().launched&&session.getRuntime().getSnapshot().runtimeVariant==='multiplayer','multiplayer Runtime launched');
+ assert.equal(session.getSnapshot().roomLaunchStage,'runtime');
+ const cover=node('#player .player-loading-cover');
+ assert.equal(cover.querySelector('.loading-activity').dataset.loadingContext,'multiplayer');
+ assert.ok(cover.querySelector('[data-loading-scene]'));
+ await React.act(async()=>f.native.emit('first-frame'));
+ await until(()=>session.getSnapshot().roomLaunchStage==='path','first frame still waits for gameplay transport');
+ assert.equal(cover.isConnected,true);
+ f.native.Module={eaglerOptions:{netplayMode:'lan'}};
+ f.native.__eaglerNetplayTransport='relay';
+ f.native[api.multiplayerConfigForProduct('th09mp').peerTransportGlobal]={peers:new Map(),relay:{readyState:1}};
+ await until(()=>session.getSnapshot().roomLaunchStage===null,'transport ready uncovers the game');
+ assert.equal(cover.isConnected,false);
+});
+
+test('room game check shows the shared activity until its first frame',async()=>{
+ const host=developmentAcquisitionHost(['th06']);host.shared.netplayRelay='wss://relay.invalid/socket';
+ const f=await mountBrowser({initial:'/?game=th06mp&mpRoom=1234',host,socketBoundary:true,seedPackages:['th06']});
+ const session=api.getTestSession();
+ const socket=f.sockets[0],localId=new URL(socket.url).searchParams.get('lobby');
+ await React.act(async()=>{socket.open();socket.message({type:'state',room:{
+  code:'1234',playerCount:2,difficulty:1,phase:'lobby',inputDelay:0,predictionLimit:8,startSerial:0,
+  seats:[{clientId:localId,name:'A',loadout:0,ready:false},null],spectators:[],
+ }});});
+ await until(()=>session.room.service.getSnapshot().preparation?.status==='ready','native room menu prepared',15_000);
+ let check;
+ await React.act(async()=>{check=session.room.service.checkGame();});
+ await until(()=>session.getRuntime().getSnapshot().launched,'check game launched');
+ const loader=node('.room-workspace-preparation .loading-activity');
+ assert.equal(loader.dataset.loadingContext,'multiplayer');
+ assert.ok(loader.querySelector('[data-loading-scene]'));
+ assert.ok(loader.querySelector('.loading-activity-status').textContent.startsWith(api.translate(session.getSnapshot().locale,'multiplayer.checkingGame').replace(/…$/, '')));
+ await React.act(async()=>{f.native.emit('first-frame');await check;});
+ assert.equal(loader.isConnected,false);
 });
 
 test('an existing native menu without a room preload record survives role changes and Ready',async()=>{
@@ -3945,4 +4077,19 @@ test('actual BrowserLauncher: save choice runs after native preparation and befo
  await until(()=>api.getTestSession().getRuntime().getSnapshot().launched,'the browser save starts normally');
  const order=api.getCloudSaveEvents().map(event=>event.type);
  assert.ok(order.indexOf('beforeStart')<order.indexOf('started'));
+});
+
+
+test('game settings open all sections by default and remember manual collapse', async () => {
+  await mountBrowser({initial:'/?game=th06&lang=en'});
+  await click('#gameSettingsOpen');
+  const settings='.book-game-detail-settings';
+  for (const selector of ['#displayOptions .options-group-head','.input-settings-heading','#mobileOptionsToggle','#audioOptions .options-group-head','#fileOptions .options-group-head','#advancedOptions .options-group-head']) {
+    assert.equal(node(settings+' '+selector).getAttribute('aria-expanded'),'true',selector);
+  }
+  await click(settings+' #fileOptions .options-group-head');
+  assert.equal(node(settings+' #fileOptions .options-group-head').getAttribute('aria-expanded'),'false');
+  await click('.book-game-settings-back');
+  await click('#gameSettingsOpen');
+  assert.equal(node(settings+' #fileOptions .options-group-head').getAttribute('aria-expanded'),'false');
 });

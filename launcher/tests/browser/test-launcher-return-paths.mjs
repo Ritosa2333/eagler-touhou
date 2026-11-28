@@ -18,6 +18,7 @@ const workStatistics = {
   spellCards:[{number:3,name:'Test Spell',attempts:[3,0,0,0,0,0],captures:[2,0,0,0,0,0]}],
 };
 const fixtures = {
+  '/release-catalog.json': {schema:'eagler-touhou/release-catalog/1', games:{}},
   '/api/ready': {ready:true},
   '/api/auth/get-session': {user},
   '/api/v1/me/cloud-saves': {
@@ -76,7 +77,7 @@ try {
       await page.setRequestInterception(true);
       page.on('request', async request => {
         const url = new URL(request.url());
-        if (url.origin !== origin.origin || !url.pathname.startsWith('/api/')) return request.continue();
+        if (url.origin !== origin.origin || (!url.pathname.startsWith('/api/') && url.pathname !== '/release-catalog.json')) return request.continue();
         const paused = pausedFixtures.get(url.pathname);
         if (paused) await paused;
         const data = url.pathname === '/api/auth/get-session' && !signedIn ? {user:null} : fixtures[url.pathname];
@@ -147,6 +148,10 @@ try {
         await tap('#gameSettingsOpen');
         await wait(desktopSettings);
         await wait('#launch',true);
+        const sectionHeads = desktopSettings + ' > .options-settings > .options-group > .options-group-head';
+        const initialGroups = await page.$$eval(sectionHeads, heads => heads.map(head => head.getAttribute('aria-expanded')));
+        assert.ok(initialGroups.length >= 5 && initialGroups.every(value => value === 'true'), 'game settings sections start expanded');
+        for (const head of await page.$$(sectionHeads)) await head.click();
         const measureRail = () => page.evaluate(() => {
           const rail = document.querySelector('.book-sidebar').getBoundingClientRect();
           const header = document.querySelector('.book-masthead').getBoundingClientRect();
@@ -166,7 +171,7 @@ try {
           'short settings fill the area below the masthead without making an empty scroll range');
         assert.ok(collapsed.searchOffset > 0,'the masthead leaves the sidebar search visible');
         await page.setViewport(desktopViewport);
-        await tap('#advancedOptions button.options-group-head');
+        if (await page.$eval('#advancedOptions button.options-group-head', button => button.getAttribute('aria-expanded')) !== 'true') await tap('#advancedOptions button.options-group-head');
         const version = await wait('#gameVersionSelect-trigger');
         assert.equal(await version.evaluate(button => {
           const row = button.closest('.settings-choice-row');
@@ -196,7 +201,7 @@ try {
         await wait(desktopSettings,true);
         await wait('#gameSettingsOpen');
         await tap('#gameSettingsOpen');
-        await tap('#fileOptions button.options-group-head');
+        if (await page.$eval('#fileOptions button.options-group-head', button => button.getAttribute('aria-expanded')) !== 'true') await tap('#fileOptions button.options-group-head');
         await tap('[data-action="manage-replay"]');
         await tap('#player .replay-back');
         await wait(desktopSettings);
@@ -348,7 +353,7 @@ try {
           range.selectNode(heading.lastChild);
           return Math.abs(range.getBoundingClientRect().left - label.getBoundingClientRect().left) < 1;
         }),true,'nested settings labels align with the section title');
-        await tap('#mobileOptionsToggle');
+        if (await page.$eval('#mobileOptionsToggle', button => button.getAttribute('aria-expanded')) !== 'true') await tap('#mobileOptionsToggle');
         await tap('#touchLayoutEdit');
         await tap('#touchLayoutExit');
         await wait(gameSettings);
@@ -358,7 +363,7 @@ try {
         await page.goBack();
         await wait('#touchLayoutEditor',true);
         await wait(gameSettings);
-        await tap('#fileOptions button.options-group-head');
+        if (await page.$eval('#fileOptions button.options-group-head', button => button.getAttribute('aria-expanded')) !== 'true') await tap('#fileOptions button.options-group-head');
         await tap('[data-action="manage-replay"]');
         await tap('#player .replay-back');
         await wait(gameSettings);
@@ -512,13 +517,14 @@ try {
       }
 
       await tap('.profile-th09-history-meta button');
-      await wait('.profile-th09-replays[data-open=true] tbody tr');
-      await wait('.profile-th09-replays .profile-round-actions button');
+      await wait('.profile-th09-replays[data-open=true] .th09-replay-row');
+      await wait('.profile-th09-replays .th09-replay-actions button');
       assert.equal(new URL(page.url()).pathname,profile,'rounds expand inside the current profile');
       await tap('.profile-th09-history-meta button');
       await wait('.profile-th09-replays[data-open=true]',true);
 
       const gameDataTab = name => '.profile-game-data-switch button[aria-label="' + name + '"]';
+      await page.$eval(gameDataTab('全部作品'), button => button.scrollIntoView({block:'center',behavior:'instant'}));
       await tap(gameDataTab('全部作品'));
       {
         const viewport = page.viewport();

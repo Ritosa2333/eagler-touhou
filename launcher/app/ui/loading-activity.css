@@ -1,0 +1,51 @@
+@layer components {
+  .player-loading-cover {
+    position:absolute;inset:0;z-index:1;display:grid;place-items:center;box-sizing:border-box;
+    padding:16px;pointer-events:none;
+    padding-block: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-bottom));
+    background:radial-gradient(ellipse at 50% 44%,var(--kit-card),var(--kit-background) 72%);
+  }
+  .loading-activity {
+    display: grid;
+    justify-items: center;
+    gap: 14px;
+    min-inline-size: 0;
+    inline-size:min(100%, 30rem, 92svh);
+    text-align: center;
+  }
+  .loading-activity-dots {display:inline-flex;vertical-align:baseline;--loading-hop:-1px;}
+  .loading-activity-dots > span {
+    animation: ui-loading-hop 1.65s ease-in-out infinite;
+  }
+  .loading-activity-dots > span:nth-child(2) {animation-delay:300ms;}
+  .loading-activity-dots > span:nth-child(3) {animation-delay:600ms;}
+  .loading-activity-copy {display:grid;gap:8px;justify-items:inherit;min-inline-size:0;}
+  .loading-activity-status {color:var(--kit-foreground);font-size:16px;font-weight:650;}
+  .loading-activity-tip {
+    display:flex;align-items:baseline;gap:8px;margin:0;text-align:start;
+    color:var(--kit-muted-foreground);font-size:13px;line-height:1.55;
+  }
+  .loading-activity-tip b {
+    flex:none;padding:0 5px;border:1px solid var(--kit-border);border-radius:4px;
+    color:var(--kit-foreground);font-size:10px;letter-spacing:.05em;
+  }
+  .loading-activity[data-compact] {
+    grid-template-columns:clamp(76px, 28%, 128px) minmax(0, 1fr);
+    align-items:center;justify-items:start;gap:6px 12px;text-align:start;
+  }
+  .loading-activity[data-compact] .loading-activity-copy {gap:4px;}
+  .loading-activity[data-compact] :is(.loading-activity-status,.loading-activity-tip) {font-size:12px;}
+  @media (max-width:360px) {
+    .loading-activity[data-compact] {grid-template-columns: minmax(0, 1fr);}
+    .loading-activity[data-compact] .loading-scene {max-inline-size:128px;}
+  }
+  @keyframes ui-loading-hop {
+    0%, 14%, 100% {transform:translateY(0);}
+    7% {transform:translateY(var(--loading-hop));}
+  }
+  .is-done .loading-activity :is([data-scene-motion], .loading-activity-dots > span) {animation-play-state:paused;}
+  :is(body.less-motion, .loading-activity[data-still]) .loading-activity-dots > span {animation-name:none;}
+  @media (prefers-reduced-motion:reduce) {
+    .loading-activity-dots > span {animation-name:none;}
+  }
+}

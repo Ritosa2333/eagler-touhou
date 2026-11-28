@@ -25,6 +25,7 @@ import {
   type MultiplayerPreferenceStore,
 } from '../../src/launcher/multiplayer-preferences.mts';
 import type { MultiplayerRoomSessionStore } from '../../src/launcher/multiplayer-room-session.mts';
+import {normalizeRoomName} from '../../../common/contracts/room-name.mjs';
 import {
   buildMultiplayerLobbyRelayUrl,
   buildMultiplayerGameplayRelayUrl,
@@ -67,6 +68,8 @@ export interface RoomPreparationProgress extends MultiplayerResourceProgress {
   title?: string;
 }
 export interface RoomOwnerSnapshot {
+  roomNames?: boolean;
+  roomNameStatus?: RoomNameStatus | null;
   product: MultiplayerProductId | null;
   room: Readonly<MultiplayerRoomState> | null;
   epoch: number;
@@ -96,6 +99,7 @@ export interface RoomOwnerSnapshot {
   canNudge?: boolean;
   localClientId: string;
 }
+type RoomNameStatus = 'reviewing' | 'saved' | 'approved' | 'rejected' | 'invalid' | 'unavailable' | 'rate-limited';
 export interface RoomOperationContext {
   product: MultiplayerProductId;
   roomCode: string;
@@ -244,6 +248,8 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     reportedResourceKey = '',
     lastActivity = 0;
   const state = {
+    roomNames: false,
+    roomNameStatus: null as RoomNameStatus | null,
     fromDirectory: false,
     connected: false,
     connectionDetail: undefined as string | undefined,
@@ -268,12 +274,14 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     preferTurn: ports.preferences.preferTurn(),
   };
   let snapshot: RoomOwnerSnapshot;
+  let initialRoomName: string | undefined;
   const policy = () => (product ? multiplayerConfigForProduct(product) : null);
   const ownerLocal = () => room?.synced === true && state.seat === 0;
   const current = (value: number) => !disposed && epoch === value && room !== null;
   function persist() {
     if (!product || !room) return;
     ports.sessions.save(product, {
+      ...(initialRoomName ? {initialRoomName} : {}),
       room: {
         code: room.code,
         playerCount: room.playerCount,
@@ -506,6 +514,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       state.rollbackEnabled = multiplayerInputTimingPolicy(config).rollback && normalized.adonisMode !== 1;
     }
     Object.assign(room, normalized, {
+      roomName: normalizeRoomName(record(value)?.roomName),
       synced: true,
       connection: 'connected',
       challengeMode: normalized.challengeMode ?? false,
@@ -714,6 +723,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         return;
       }
       if (message.type === 'state') {
+        if (typeof message.roomNames === 'boolean') state.roomNames = message.roomNames;
         if (!accountIdentityRequested && typeof message.accountChallenge === 'string') {
           accountIdentityRequested = true;
           requestAccountIdentity(message.accountChallenge);
@@ -733,6 +743,12 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
           void ports.network.receive({ type: 'room-probe-config', iceServers: probe.iceServers });
         state.startSerial = Math.max(state.startSerial, Number(record(message.room)?.startSerial) || 0);
         applySnapshot(message.room);
+        if (initialRoomName && ownerLocal() && room?.phase === 'lobby' && state.roomNames) {
+          const name = initialRoomName;
+          initialRoomName = undefined;
+          persist();
+          setRoomName(name);
+        }
         reportRoomReturn();
         if (reconnecting && product === 'th075mp' && state.seat == null && state.spectatorRequested &&
             !room?.spectators?.some(spectator => spectator.clientId === clientId)) {
@@ -749,6 +765,11 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
           // directory spectator rows already carry the observer intent.
           else if (state.seat == null && room && product !== 'th09mp') spectate();
         }
+      } else if (message.type === 'room-name-status') {
+        const status = message.status as RoomNameStatus;
+        if (!['reviewing','saved','approved','rejected','invalid','unavailable','rate-limited'].includes(status)) return;
+        state.roomNameStatus = status;
+        publish();
       } else if (message.type === 'start') {
         applySnapshot(message.room);
         const serial = Number(message.serial) || 0;
@@ -837,6 +858,9 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     next.addEventListener('error', () => {});
   }
   function resetRoom() {
+    initialRoomName = undefined;
+    state.roomNames = false;
+    state.roomNameStatus = null;
     clearRoomReturn();
     state.connectionDetail = undefined;
     settingsReloadPending = false;
@@ -897,6 +921,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     const spectatorEntry = intent === 'join' && invite.s === true;
     autoSeat = state.fromDirectory && intent === 'join' && !spectatorEntry;
     const created = state.fromDirectory && intent === 'create';
+    initialRoomName = created ? saved?.initialRoomName : undefined;
     const requestedCount = invite.p;
     room = {
       code,
@@ -1146,6 +1171,12 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       state.ready = ready;
       publish();
     }
+  }
+  function setRoomName(name: string | null) {
+    if (!ownerLocal() || room?.phase !== 'lobby' || !state.roomNames) return;
+    const normalized = normalizeRoomName(name);
+    if (name !== null && !normalized) return;
+    send({type:'set-room-name', roomName:normalized});
   }
   function setRoomSettings(
     patch: Partial<
@@ -1759,6 +1790,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         send({type: 'switch-product', product: nextProduct});
     },
     setRoomSettings,
+    setRoomName,
     setStartupRoute(route: StartupRoute) {
       if (!room?.synced || !state.connected || room.phase !== 'lobby' || state.seat == null ||
           state.spectatorRequested || state.launchBusy || state.checkBusy || !room.startupRoutes?.includes(route)) return;

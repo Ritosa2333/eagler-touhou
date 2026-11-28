@@ -17,9 +17,9 @@ const backgroundSurfaces = ['navigation', 'category', 'card', 'panel'] as const;
 export type BackgroundSurface = typeof backgroundSurfaces[number];
 const defaults = {mode:'image' as BackgroundMode, shade: 45, panel: 88, navigation: 88, category: 88, card: 88, fit: 'cover' as 'cover'|'contain'};
 const text = {
-  'zh-CN': {title:'主题设置', base:'主题基底', light:'亮色', dark:'暗色', background:'背景', presets:'内置背景', plain:'空白', image:'自定义图片', dots:'星点', grid:'方格', seigaiha:'青海波', choose:'选择图片', change:'更换图片', remove:'移除图片', shade:'背景遮罩', panel:'内容面板不透明度', navigation:'顶部栏不透明度', category:'分类条不透明度', card:'作品卡片不透明度', fit:'图片铺放', cover:'铺满', contain:'完整显示', note:'图片只保存在此浏览器中。', error:'无法保存图片，请选择不超过 10 MB 的有效图片。'},
-  en: {title:'Theme settings', base:'Base theme', light:'Light', dark:'Dark', background:'Background', presets:'Built-in backgrounds', plain:'Plain', image:'Custom image', dots:'Dots', grid:'Grid', seigaiha:'Seigaiha', choose:'Choose image', change:'Change image', remove:'Remove image', shade:'Background overlay', panel:'Content panel opacity', navigation:'Navigation opacity', category:'Category opacity', card:'Game card opacity', fit:'Image fit', cover:'Cover', contain:'Contain', note:'The image is stored only in this browser.', error:'Could not save the image. Choose a valid image up to 10 MB.'},
-  ja: {title:'テーマ設定', base:'基本テーマ', light:'ライト', dark:'ダーク', background:'背景', presets:'背景のプリセット', plain:'なし', image:'カスタム画像', dots:'星点', grid:'格子', seigaiha:'青海波', choose:'画像を選択', change:'画像を変更', remove:'画像を削除', shade:'背景の覆い', panel:'コンテンツの不透明度', navigation:'ナビの不透明度', category:'カテゴリーの不透明度', card:'作品カードの不透明度', fit:'画像の表示', cover:'画面を埋める', contain:'画像全体', note:'画像はこのブラウザーにのみ保存されます。', error:'画像を保存できません。10 MB 以下の画像を選択してください。'},
+  'zh-CN': {title:'主题设置', base:'主题基底', light:'亮色', dark:'暗色', background:'背景', presets:'内置背景', plain:'空白', image:'自定义图片', dots:'星点', grid:'方格', seigaiha:'青海波', choose:'选择图片', change:'更换图片', remove:'移除图片', shade:'背景遮罩', panel:'内容面板不透明度', navigation:'顶部栏不透明度', opacity:'不透明度', category:'侧栏与分类不透明度', card:'作品卡片不透明度', fit:'图片铺放', cover:'铺满', contain:'完整显示', note:'图片只保存在此浏览器中。', error:'无法保存图片，请选择不超过 10 MB 的有效图片。'},
+  en: {title:'Theme settings', base:'Base theme', light:'Light', dark:'Dark', background:'Background', presets:'Built-in backgrounds', plain:'Plain', image:'Custom image', dots:'Dots', grid:'Grid', seigaiha:'Seigaiha', choose:'Choose image', change:'Change image', remove:'Remove image', shade:'Background overlay', panel:'Content panel opacity', navigation:'Navigation opacity', opacity:'Opacity', category:'Sidebar and category opacity', card:'Game card opacity', fit:'Image fit', cover:'Cover', contain:'Contain', note:'The image is stored only in this browser.', error:'Could not save the image. Choose a valid image up to 10 MB.'},
+  ja: {title:'テーマ設定', base:'基本テーマ', light:'ライト', dark:'ダーク', background:'背景', presets:'背景のプリセット', plain:'なし', image:'カスタム画像', dots:'星点', grid:'格子', seigaiha:'青海波', choose:'画像を選択', change:'画像を変更', remove:'画像を削除', shade:'背景の覆い', panel:'コンテンツの不透明度', navigation:'ナビの不透明度', opacity:'不透明度', category:'サイドバーとカテゴリーの不透明度', card:'作品カードの不透明度', fit:'画像の表示', cover:'画面を埋める', contain:'画像全体', note:'画像はこのブラウザーにのみ保存されます。', error:'画像を保存できません。10 MB 以下の画像を選択してください。'},
 };
 function settings(): typeof defaults {
   try {
@@ -119,7 +119,10 @@ export function BackgroundSettings({open,onOpenChange,dark,onThemeChange,surface
   async function choose(file:File|undefined){if(!file)return; try{if(!file.type.startsWith('image/')||file.size>10*1024*1024)throw Error(); const bitmap=await createImageBitmap(file);bitmap.close();await imageStore('readwrite',file);setHasImage(true);setError(false);setValue('mode','image');announceImage();}catch{setError(true);} finally {if(input.current)input.current.value='';}}
   async function remove(){try{await imageStore('readwrite',null);setHasImage(false);setError(false);announceImage();}catch{setError(true);}}
   const mode = values.mode === 'image' && !hasImage ? 'plain' : values.mode;
-  const opacitySettings = ['shade', ...surfaces] as const;
+  const renderOpacity = (key: BackgroundSurface | 'shade') => <label key={key}>
+    {labels[key]}<output>{values[key]}%</output>
+    <input name={key} type="range" min="0" max="100" value={values[key]} onChange={e=>setValue(key,Number(e.currentTarget.value))}/>
+  </label>;
   return <Dialog open={open} onOpenChange={onOpenChange}>
     <DialogContent ref={dialog} className="custom-background-dialog" overlayClassName="custom-background-overlay" aria-describedby={undefined} style={{translate:`${offset.x}px ${offset.y}px`}}>
       <div className="custom-background-drag-handle" onPointerDown={startDrag} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={endDrag} onLostPointerCapture={endDrag}>
@@ -144,9 +147,9 @@ export function BackgroundSettings({open,onOpenChange,dark,onThemeChange,surface
           <option value="cover">{labels.cover}</option><option value="contain">{labels.contain}</option>
         </select>
       </label>}
-      {mode!=='plain'&&opacitySettings.map(key=><label key={key}>{labels[key]}<output>{values[key]}%</output>
-        <input name={key} type="range" min="0" max="100" value={values[key]} onChange={e=>setValue(key,Number(e.currentTarget.value))}/>
-      </label>)}
+      {mode!=='plain'&&renderOpacity('shade')}
+      <h3>{labels.opacity}</h3>
+      {surfaces.map(renderOpacity)}
       {error&&<p role="alert">{labels.error}</p>}
     </DialogContent>
   </Dialog>;

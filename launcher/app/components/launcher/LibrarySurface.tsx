@@ -5,10 +5,12 @@ import {useLocale} from '../../i18n';
 
 export interface LibrarySurfaceProps extends Omit<LibraryCardsProps, 'variant' | 'lobbyLink' | 'inert'> {
   masthead: ReactNode;
+  homeHref: string;
   active?: boolean;
   optionsOpen: boolean;
   compact?: boolean;
   mobileSearchTarget?: HTMLElement | null;
+  installProgress?: ReactNode;
   detail?: ReactNode;
   onBrowse?: () => void;
   roomOpen?: boolean;

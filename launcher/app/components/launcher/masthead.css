@@ -287,7 +287,7 @@
   font: 500 12px / 1.4 var(--kit-font);
 }
 @media (max-width: 780px) {
-  .book-masthead .masthead-links > :is(.book-top-faq, .book-top-donation, .book-theme-toggle) {
+  .book-masthead .masthead-links > :is(.book-top-faq, .book-top-feedback, .book-top-donation, .book-theme-toggle) {
     display: none;
   }
   .book-masthead .masthead-menu-toggle svg { transform: none; }

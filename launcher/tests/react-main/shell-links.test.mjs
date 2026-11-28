@@ -12,7 +12,7 @@ const here=dirname(fileURLToPath(import.meta.url)),project=resolve(here,'../..')
 let env,React,createRoot,hydrateRoot,renderToString,owners,buildDirectory,root;
 before(async()=>{
  env=installMountedDom(); React=await import(pathToFileURL(require.resolve('react'))); ({createRoot,hydrateRoot}=await import(pathToFileURL(require.resolve('react-dom/client'))));({renderToString}=await import(pathToFileURL(require.resolve('react-dom/server'))));
- buildDirectory=await mkdtemp(resolve(here,'shell-links-build-'));
+ buildDirectory=await mkdtemp(resolve(process.env.EAGLER_TEST_OUTPUT_DIR || here,'shell-links-build-'));
  await require('esbuild').build({absWorkingDir:project,stdin:{resolveDir:project,loader:'ts',contents:`
  export * from './app/components/launcher/OptionsPanel.tsx';
  export * from './app/components/launcher/LauncherMasthead.tsx';
@@ -74,6 +74,15 @@ test('Original hidden legacy online fold preserves readiness, retained normalize
  await React.act(async()=>update('missing'));await React.act(async()=>update('ready'));assert.equal(head.getAttribute('aria-expanded'),'true');assert.equal(input.value,'12345678');assert.equal(fold.hidden,true);
 });
 function Masthead({variant='lobby',assetUrl=x=>x,launcherHref='/en.html',faqHref='faq.html',aboutHref='about.html',...props}){const[open,setOpen]=React.useState(false);return el(owners.LauncherMasthead,{...props,variant,assetUrl,launcherHref,faqHref,aboutHref,menuOpen:open,onMenuOpenChange:setOpen,lessMotion:false,onToggleMotion(){},diagnosticsEnabled:false,onToggleDiagnostics(){},onDonation(){},onFirstUse(){},languageControl:el(owners.MainSelect,{id:'uiLanguageSelect',className:'option-select ui-language-select','data-trigger-i18n':'ui.language.menu',value:'en',onChange(){}},el('option',{value:'zh-CN'},'简体中文'),el('option',{value:'en'},'English'),el('option',{value:'ja'},'日本語'))});}
+test('shared help masthead links to the feedback site beside FAQ',async()=>{
+ await mount(el(Masthead,{variant:'help',nativeLinks:true}),{initialEntries:['/faq.html?lang=en']});
+ const feedback=n('.masthead-links a.book-top-feedback');
+ assert.equal(feedback.previousElementSibling,n('.book-top-faq'));
+ assert.equal(feedback.getAttribute('aria-label'),'Feedback');
+ assert.equal(feedback.getAttribute('href'),'https://feedback.touhouonline.com/');
+ assert.equal(feedback.target,'_blank');
+ assert.equal(feedback.rel,'noopener noreferrer');
+});
 test('Lobby launcher back keeps original anchor and uses Router, standalone docs remain native',async()=>{await mount(el(Masthead));assert.equal(n('#launcherLink').getAttribute('href'),'/en.html');assert.equal(n('a[href="faq.html"]').getAttribute('data-discover'),null);await click('#launcherLink');assert.equal(n('#address').textContent,'/en.html');});
 async function openMasthead() {await React.act(async()=>{const trigger=n('#mastheadMenuToggle');trigger.focus();trigger.dispatchEvent(new env.window.KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true,cancelable:true}));});await vi.waitFor(async()=>{await React.act(async()=>{await new Promise(resolve=>env.window.requestAnimationFrame(resolve));});assert.ok(env.document.querySelector('#mastheadMenuPanel'));});}
 test('Radix masthead menu opens by keyboard and Escape restores its trigger',async()=>{
@@ -177,7 +186,11 @@ test('the masthead groups help, site actions, settings and information',async()=
  assert.equal(n('.masthead-developer-trigger').closest('[role="group"]'),n('.masthead-language-trigger').closest('[role="group"]'));
  assert.deepEqual([...n('#mastheadMenuPanel').querySelectorAll('.masthead-menu-heading')].map(x=>x.textContent),['Help','Site','Settings','About this site']);
  const icons=[...link.closest('[role="group"]').querySelectorAll('svg')];
- assert.equal(icons.length,4);
+ assert.equal(icons.length,5);
+ const feedback=n('#mastheadMenuPanel a[href="https://feedback.touhouonline.com/"]');
+ assert.equal(feedback.closest('[role="group"]'),link.closest('[role="group"]'));
+ assert.equal(feedback.getAttribute('target'),'_blank');
+ assert.equal(feedback.getAttribute('rel'),'noopener noreferrer');
  assert.equal(new Set(icons.map(icon=>icon.innerHTML)).size,icons.length);
 });
 

@@ -47,13 +47,13 @@ export default function HelpRoute() {
 }
 function DocumentLink({ href = '', prefetch, ...props }: ComponentProps<'a'> & { prefetch?: boolean }) {
   const { locale } = useLocale();
-  const local =
-    href.startsWith('#') ||
-    (href.startsWith('/') && !!helpDocumentAtPath(new URL(href, 'https://launcher.invalid').pathname));
+  const anchor = href.startsWith('#');
+  const destination = href.startsWith('/') ? new URL(href, 'https://launcher.invalid') : undefined;
+  const local = anchor || (destination && helpDocumentAtPath(destination.pathname));
   return local ? (
     <Link
       {...props}
-      to={href.startsWith('#') ? href : withUiLanguage(href, locale)}
+      to={anchor ? href : withUiLanguage(href, locale)}
       prefetch={prefetch ? 'intent' : 'none'}
     />
   ) : (

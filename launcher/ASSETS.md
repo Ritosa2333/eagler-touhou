@@ -2,6 +2,10 @@
 
 本文记录 Launcher 图像、字体的来源、Host 生成方式和发布位置。许可证见 [`THIRD_PARTY.md`](THIRD_PARTY.md)；保留随资源提供的上游许可证文件。
 
+## 站名字标
+
+字标源文件为提供的[定稿 SVG](public/assets/launcher-wordmark.svg)，包含字形路径、阴阳玉和镂空遮罩。顶栏沿用导出的深浅两张透明 PNG，由站内主题选择。
+
 ## 游戏封面
 
 书库卡片复用已登记的原作封面。界面使用的 WebP 位于 `app/components/launcher/book-covers/`；TH01–TH04 使用原包装扫描的 960px 方形裁剪，其余封面最长边为 640px，质量为 82。同目录 `sources.json` 记录素材来源与文件的 SHA-256。Vite 将这些封面纳入前端资源图与离线缓存。封面素材不决定作品是否展示，卡片成员始终由主项目的发布目录决定。
@@ -18,7 +22,7 @@ PWA 图标 `pwa/icon-192.png`、`icon-512.png`、`icon-maskable-512.png` 和 `ap
 
 站点界面使用自行托管的 Yatra One 拉丁子集和 ChillRoundGothic 界面子集：Medium 用于正文，Bold 用于标题，Heavy 用于两张主卡片标题。子集构建脚本为 `scripts/build-site-ui-fonts.mjs`；上游版本与 OFL 声明记在该脚本及生成字体旁。GNU Unifont 作为缺字时的最后回退字体。完整日文字体与 Runtime 游戏字体由本地 Host 输入或 Runtime 包提供。
 
-浏览器图标、README 标识和安装图标均从同一套徽标资源派生，默认图标使用莉莉白。`scripts/build-site-icon.py` 更新浏览器图标与文档预览。Host 将其复制为 `assets/favicon.ico`，并生成安装图标；运营者也可提供自定义 favicon。
+浏览器标签页图标来自项目提供的[莉莉白 SVG](scripts/assets/lily-white-favicon.svg)。`scripts/build-site-icon.py` 使用 Chromium 渲染 SVG，生成多尺寸 ICO 和 PNG；Host 将 ICO 发布为 `assets/favicon.ico`，运营者可提供自定义 favicon。README 标识和安装图标沿用站点徽标资源。
 
 游戏来源说明使用本地 Bilibili 和 GitHub SVG，来自 `@iconify-json/fa7-brands@1.2.4`（Font Awesome Brands 7.3.1）。
 

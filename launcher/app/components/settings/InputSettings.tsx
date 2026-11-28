@@ -22,17 +22,19 @@ export function InputSettings({
   th09Local,
   th19=false,
   th075=false,
+  defaultOpen=false,
 }: {
   keyboard?: KeyboardPreferences;
   gamepad?: GamepadMappingModel;
   th09Local?: Th09LocalInput;
   th19?:boolean;
   th075?:boolean;
+  defaultOpen?:boolean;
 }) {
   const { t } = useLocale(),
     id = useId(),
     trigger = useRef<HTMLButtonElement>(null);
-  const [open, setOpen] = useState(false),
+  const [open, setOpen] = useState(defaultOpen),
     [editing, setEditing] = useState(false);
   const [device, setDevice] = useState<'keyboard' | 'gamepad'>(keyboard ? 'keyboard' : 'gamepad');
   const [scope, setScope] = useState<'general' | 'local'>('general');

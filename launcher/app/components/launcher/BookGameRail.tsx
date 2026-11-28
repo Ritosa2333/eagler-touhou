@@ -26,18 +26,18 @@ type GameAction = {
   label?: string;
   selected: boolean;
   anchorRef?: Ref<HTMLAnchorElement>;
-  marker?: ReactNode;
+  selection?: ReactNode;
   onClick(event: MouseEvent<HTMLElement>): void;
 };
 
-export function BookGameRail<Id extends string>({label, className, groups, search, interactive, favorites, onFavorite, gameAction}: {
+export function BookGameRail<Id extends string>({label, className, groups, search, interactive, favorite, gameAction, footer}: {
   label: string;
   className?: string;
   groups: readonly BookRailGroup<Id>[];
   search: Omit<ComponentProps<typeof LibrarySearch>, 'interactive' | 'desktop'>;
   interactive: boolean;
-  favorites: readonly string[];
-  onFavorite(id: string): void;
+  favorite?: {ids: readonly string[]; onToggle(id: string): void};
+  footer?: ReactNode;
   gameAction(product: LibraryProduct, group: Id): GameAction;
 }) {
   const {t} = useLocale();
@@ -47,7 +47,8 @@ export function BookGameRail<Id extends string>({label, className, groups, searc
       {groups.map(group => <Disclosure key={group.id} id={group.panelId} open={group.expanded === true} onOpenChange={next => group.onExpand?.(next)}>
         {({open, trigger, panel}) => {
           const Icon = group.icon;
-          const separateDisclosure = !!group.onSelect && !!group.onExpand;
+          const expandable = !!group.onExpand;
+          const separateDisclosure = !!group.onSelect && expandable;
           const mark = <ChevronRight aria-hidden="true" data-expanded={open}/>;
           return <div className="book-category" data-book-category-group={group.id} data-selected={group.selected === true}>
             <div className="book-category-row" data-single-action={!separateDisclosure || undefined}>
@@ -62,14 +63,14 @@ export function BookGameRail<Id extends string>({label, className, groups, searc
                 ? <Button variant="ghost" size="icon-sm" className="book-category-disclosure" disabled={!interactive}
                     data-book-category-disclosure={group.id} aria-label={t('library.categoryContents', {category:group.label})}
                     {...trigger}>{mark}</Button>
-                : <span className="book-category-disclosure" aria-hidden="true">{mark}</span>}
+                : expandable && <span className="book-category-disclosure" aria-hidden="true">{mark}</span>}
             </div>
-            {!!group.onExpand && <DisclosurePanel {...panel} className="book-category-fold">
+            {expandable && <DisclosurePanel {...panel} className="book-category-fold">
               <ul className="book-category-games">
                 {group.products?.map(product => {
                   const action = gameAction(product, group.id);
-                  return <li key={product.id} data-lobby-rail-product={action.marker ? product.id : undefined}>
-                    {action.marker}
+                  return <li key={product.id} data-lobby-rail-product={action.selection ? product.id : undefined}>
+                    {action.selection}
                     {action.href
                       ? <Button asChild variant="ghost" className="book-rail-game"><a ref={action.anchorRef} href={action.href}
                           data-book-sidebar-product={product.id} aria-current={action.selected ? 'page' : undefined}
@@ -80,12 +81,12 @@ export function BookGameRail<Id extends string>({label, className, groups, searc
                           aria-pressed={action.selected} disabled={!interactive} onClick={action.onClick}>
                           <BookRailGameIdentity product={product}/>
                         </Button>}
-                    <Button variant="ghost" size="icon-sm" className="book-favorite" disabled={!interactive}
+                    {favorite && <Button variant="ghost" size="icon-sm" className="book-favorite" disabled={!interactive}
                       data-book-sidebar-favorite={product.id} aria-label={t('library.favorite', {title:product.title})}
-                      aria-pressed={favorites.includes(product.id)}
-                      onClick={event => {impressFavorite(event.currentTarget); onFavorite(product.id);}}>
+                      aria-pressed={favorite.ids.includes(product.id)}
+                      onClick={event => {impressFavorite(event.currentTarget); favorite.onToggle(product.id);}}>
                       <Star aria-hidden="true"/>
-                    </Button>
+                    </Button>}
                   </li>;
                 })}
               </ul>
@@ -94,5 +95,6 @@ export function BookGameRail<Id extends string>({label, className, groups, searc
         }}
       </Disclosure>)}
     </nav>
+    {footer && <footer className="book-sidebar-footer">{footer}</footer>}
   </aside>;
 }

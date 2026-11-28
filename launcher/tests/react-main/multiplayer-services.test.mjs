@@ -16,7 +16,7 @@ const project = fileURLToPath(new URL('../../', import.meta.url));
 let work, owner;
 before(async () => {
   await mkdir(resolve(project, '.cache'), { recursive: true });
-  work = await mkdtemp(resolve(project, '.cache/room-owners-'));
+  work = await mkdtemp(resolve(process.env.EAGLER_TEST_OUTPUT_DIR || project, '.cache/room-owners-'));
   const file = resolve(work, 'owners.mjs');
   await build({
     absWorkingDir: project,
@@ -440,32 +440,38 @@ test('directory TH09 creation keeps original charging when the saved room is res
     directory.service.dispose();
   }
 });
-test('room creation ignores legacy room names from storage and the relay', async () => {
+test('room name draft stays out of the invite and is submitted once after host seating', async () => {
   const directory = await liveDirectory();
   const room = roomFixture({sessions:directory.sessions,identity:directory.identity});
   try {
     directory.sockets[0].message(directoryState({roomNames:true}));
     assert.equal(directory.service.prepareForm('create'),true);
+    directory.service.updateForm({roomName:'弹'.repeat(11)});
+    assert.equal(directory.service.submitForm(),'unavailable');
+    const text = '速通练习';
+    directory.service.updateForm({roomName:text});
     assert.equal(directory.service.submitForm(),'close');
     directory.service.formDidClose();
     const invite = directory.navigation[0];
-    const sessionKey = owner.multiplayerRoomSessionStorageKey('th06mp');
-    const draft = JSON.parse(directory.session.getItem(sessionKey));
-    assert.ok(draft.room.code);
-    directory.session.setItem(sessionKey,JSON.stringify({...draft,initialRoomName:'速通练习'}));
+    const token = new URL(invite).searchParams.get('j');
+    assert.ok(!Buffer.from(token,'base64url').toString().includes(text));
     assert.equal(room.service.restoreInvite(invite),true);
     const socket = room.sockets[0], id = directory.identity.lobbyClientId('th06mp');
     socket.open();
-    const code = draft.room.code;
-    socket.message({type:'state',roomNames:true,room:roomState(id,{code,seats:[null,null]})});
-    socket.message({type:'state',room:roomState(id,{code,roomName:'速通练习'})});
-    const state = room.service.getSnapshot();
-    assert.equal(state.seat,0);
-    assert.equal(state.room.roomName,undefined);
-    assert.equal(JSON.parse(directory.session.getItem(sessionKey)).initialRoomName,undefined);
-    socket.message({type:'room-name-status',status:'approved'});
-    assert.equal(room.service.getSnapshot(),state);
-    assert.equal(socket.sent.some(message=>message.type==='set-room-name'),false);
+    const messages=()=>socket.sent.filter(m=>m.type==='set-room-name');
+    socket.message({type:'state',roomNames:true,room:roomState(id,{seats:[null,null]})});
+    assert.deepEqual(messages(),[]);
+    socket.message({type:'state',room:roomState(id)});
+    const saved = directory.sessions.load({product:'th06mp',roomCode:room.service.getSnapshot().room.code,playerCounts:[2],difficulties:[0]});
+    assert.ok(saved);
+    assert.equal(saved.initialRoomName,undefined);
+    socket.message({type:'state',room:roomState(id)});
+    assert.deepEqual(messages(),[{type:'set-room-name',roomName:text}]);
+    socket.message({type:'room-name-status',status:'reviewing'});
+    assert.equal(room.service.getSnapshot().roomNameStatus,'reviewing');
+    assert.equal(room.service.getSnapshot().room.roomName,null);
+    socket.message({type:'state',room:roomState(id,{roomName:text})});
+    assert.equal(room.service.getSnapshot().room.roomName,text);
   } finally {
     room.service.dispose();
     directory.service.dispose();

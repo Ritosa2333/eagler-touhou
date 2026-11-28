@@ -8,3 +8,18 @@
   .site-bottom-navigation{display:flex;align-items:stretch;gap:4px;min-width:0;padding:6px max(8px,env(safe-area-inset-right)) max(6px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left));border-top:1px solid var(--kit-border);background:var(--kit-background)}
   .site-navigation-menu{max-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px);overflow-y:auto;overscroll-behavior:contain}
 }
+
+.site-bottom-navigation .site-navigation-link > svg {
+  inline-size: 26px;
+  block-size: 26px;
+  stroke-width: 2;
+}
+
+.site-bottom-navigation .site-navigation-link[aria-current="page"] {
+  color: var(--kit-foreground);
+  font-weight: 600;
+}
+
+.site-bottom-navigation .site-navigation-link[aria-current="page"] > svg {
+  stroke-width: 2.6;
+}

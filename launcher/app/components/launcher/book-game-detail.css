@@ -1,7 +1,9 @@
 @layer components {
   .book-game-detail {
     --game-detail-inset: clamp(20px, 3.9vw, 56px);
+    background: var(--book-surface);
     min-width: 0;
+    min-block-size: var(--launcher-content-height, calc(100dvh - var(--site-header-height, 44px)));
     scroll-margin-top: var(--site-header-height, 44px);
   }
   .book-game-detail-hero {
@@ -11,7 +13,7 @@
     --game-subtitle-size: 16px;
     --game-number-size: 13px;
     --game-cover-radius: 7px;
-    --game-hero-blur: 80px;
+    --game-hero-blur: 24px;
     padding: 40px var(--game-detail-inset) 18px;
   }
   .book-game-detail-hero h2:focus { outline: none; }

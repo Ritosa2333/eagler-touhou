@@ -24,8 +24,10 @@ import {
 } from 'lucide-react';
 import { Tabs, Tooltip } from 'radix-ui';
 import { lazy, Suspense, type ReactNode, useEffect, useState } from 'react';
-import { useLocation } from 'react-router';
+import { useHref, useLocation } from 'react-router';
 import { ConfirmationDialog } from '../components/ConfirmationDialog';
+import {BeautyPackManager} from '../components/launcher/BeautyPackManager';
+import {createLibraryProducts} from '../components/launcher/products';
 import { BookThemeToggle } from '../components/launcher/BookThemeToggle';
 import { LibraryAnnouncements } from '../components/launcher/LibraryAnnouncements';
 import { bookGameArtwork } from '../components/launcher/book-artwork';
@@ -41,7 +43,7 @@ import { RoomActionMenu } from '../components/room/RoomActionMenu';
 import { OptionRow } from '../components/settings/OptionRow';
 import { OptionsGroup } from '../components/settings/OptionsGroup';
 import { SettingsSelect } from '../components/settings/SettingsSelect';
-import { LocaleProvider } from '../i18n';
+import { LocaleProvider, useLocale } from '../i18n';
 import { Button } from '../ui/button';
 import '../ui/document-body.css';
 import { ButtonGroup } from '../ui/button-group';
@@ -51,6 +53,7 @@ import { Check, Toggle } from '../ui/controls';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '../ui/field';
 import { InputGroup, InputGroupInput } from '../ui/input-group';
+import { LoadingActivity } from '../ui/loading-activity';
 import { PageInventory } from '../ui/page-inventory';
 import { RoomExample } from '../ui/room-example';
 import { Slider } from '../ui/slider';
@@ -64,19 +67,40 @@ export function meta() {return [{title:sitePageTitle('UI 手册')}];}
 export const links = () => import.meta.env.DEV ? [{rel:'stylesheet', href:ratingStyles}] : [];
 
 const Th09RatingsPreview = import.meta.env.DEV ? lazy(() => import('../ui/th09-ratings-preview')) : null;
+const LoadingActivityPreview = import.meta.env.DEV ? lazy(() => import('../ui/loading-activity-preview')) : null;
 
 export default function UiReview() {
   const {search} = useLocation();
   const preview = new URLSearchParams(search).get('preview');
   return (
     <LocaleProvider locale={catalogLocale}>
-      {import.meta.env.DEV && preview === 'room-chat'
+      {LoadingActivityPreview && preview === 'loading'
+        ? <Suspense fallback={null}><LoadingActivityPreview/></Suspense>
+        : import.meta.env.DEV && preview === 'beauty-packs'
+        ? <BeautyPackPreview/>
+        : import.meta.env.DEV && preview === 'room-chat'
         ? <div className="ui-review"><main className="catalog-main"><RoomExample chatDemo announce={() => {}}/></main></div>
         : Th09RatingsPreview && preview === 'th09-ratings'
         ? <Suspense fallback={null}><Th09RatingsPreview /></Suspense>
         : <Catalog />}
     </LocaleProvider>
   );
+}
+
+function BeautyPackPreview() {
+  const base = useHref('/');
+  const [works, setWorks] = useState(() => createLibraryProducts(['th06', 'th07', 'th08', 'th09'], path => base + path, () => base)
+    .map((work, index) => ({...work, version: index % 2 === 0 ? 'beauty' as const : 'original' as const})));
+  return <div className="ui-review">
+    <header className="ui-review-header">
+      <BookThemeToggle/>
+    </header>
+    <main>
+      <BeautyPackManager works={works} onSetVersions={(games, version) => {
+        setWorks(values => values.map(work => games.includes(work.gameId) ? {...work, version} : work));
+      }}/>
+    </main>
+  </div>;
 }
 
 function Catalog() {
@@ -270,6 +294,7 @@ function Catalog() {
           </Section>
           <Section id="feedback" description="反馈跟随任务出现。空内容、加载和错误分别提供对应的下一步。">
             <FeedbackExamples />
+            <LoadingSceneExample canPreview={LoadingActivityPreview !== null}/>
             <div className="catalog-demo">
               <h3>图片与内容占位</h3>
               <div className="flex items-center gap-3" role="img" aria-label="骨架加载样例">
@@ -852,13 +877,31 @@ function LauncherEntryGuide() {
       <a href="./profile.html">个人主页</a>
     </div>
     <Usage title="桌面">
-      44 px 顶栏。字标、分隔线和辅助图标共用光学中线。单机与联机居中。公告和私信先打开各自的小窗。
+      44 px 顶栏。字标、分隔线和辅助图标共用光学中线。单机与联机居中；宽屏辅助图标带文字，「更多」保持纯图标。顶栏按钮悬停不加底色，键盘焦点可见。公告和私信先打开各自的小窗。
     </Usage>
     <Usage title="手机">
-      单机顶栏承载搜索与抽屉。底栏提供单机、联机、主页。公告和私信直接打开消息中心，桌面和手机使用同一地址。
+      单机顶栏承载搜索与抽屉。底栏提供单机、联机、主页；选中项以字重和图标线条突出。公告和私信直接打开消息中心，桌面和手机使用同一地址。
     </Usage>
     <Usage title="焦点与动效">
       检查抽屉和小窗关闭后的焦点。设置展开期间使用分组自带动效，界面减弱动效和系统减弱动效都应即时完成操作。
     </Usage>
+  </div>;
+}
+
+function LoadingSceneExample({canPreview}: {canPreview: boolean}) {
+  const base = useHref('/');
+  const {t} = useLocale();
+  const [running, setRunning] = useState(false);
+  return <div className="catalog-demo">
+    <h3>东方场景加载动画</h3>
+    <div className="catalog-row">
+      <Button variant="outline" onClick={() => setRunning(value => !value)}>
+        {running ? '结束演示' : '演示加载'}
+      </Button>
+      {canPreview && <a className="catalog-sample-link" href="?preview=loading">查看各个场景 <ArrowUpRight aria-hidden="true"/></a>}
+    </div>
+    {running && <div role="status"><LoadingActivity assetUrl={path => base + path}
+      status={t('player.loading')} context="multiplayer" compact/></div>}
+    <Usage title="显示时机">首屏、单机启动、联机房间同步与资源准备、开局与观战，以及安装等待。每次随机出现一个场景，实用提示每 5 秒轮换；任务就绪后移除动画。</Usage>
   </div>;
 }

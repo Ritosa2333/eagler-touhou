@@ -90,8 +90,6 @@ body:has(#player.room-workspace) :is(.ui-kit-select-content,.ui-menu)[data-ui-su
 .room-workspace-actions{grid-column:2;grid-row:4;display:flex;gap:10px}
 .room-workspace-preparation{position:absolute;inset:0;display:grid;place-items:center;background:var(--kit-background);padding:24px;box-sizing:border-box;overflow:auto}
 .room-preparation-caption{display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;max-width:600px;font-size:16px}
-.room-preparation-spinner{width:32px;height:32px;border:4px solid var(--line);border-top-color:var(--red-bright);border-right-color:var(--paper);border-radius:50%;animation:room-loading-spin 1s linear infinite}
-@keyframes room-loading-spin{to{transform:rotate(360deg)}}
 .room-workspace-preparation .mp-resource-tracks,.room-workspace-preparation #mpRoomResourceAmount{display:none}
 .room-workspace-preparation .mp-room-resource-progress{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:10px;background:none;padding:0;border:0;font:14px/1.6 var(--ui-font);color:var(--paper)}
 .room-workspace-preparation .mp-room-resource-progress button{padding:10px 14px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--paper);font:14px var(--ui-font)}
@@ -234,7 +232,7 @@ body:has(#player.room-workspace) :is(.ui-kit-select-content,.ui-menu)[data-ui-su
  #player.room-workspace .room-workspace-chat:has(>.mp-room-chat-log)>.mp-room-quick-chat{order:-1;flex:none;margin:0 0 12px}
  #mpRoomView.room-workspace-view .room-workspace-chat>.mp-room-chat-log{justify-content:flex-start;margin:0!important}
 }
-@media(prefers-reduced-motion:reduce){.room-preparation-spinner,.room-seat-ring.indeterminate{animation:none}}
+@media(prefers-reduced-motion:reduce){.room-seat-ring.indeterminate{animation:none}}
 .less-motion #player.room-workspace .room-workspace-roster .mp-seat{transition:none!important}
 .less-motion #player.room-workspace *,.less-motion #player.room-workspace *::after{animation:none!important;transition:none!important}
 @media(prefers-reduced-motion:reduce){

@@ -96,7 +96,8 @@ test('busy import disables original close/import/download actions and restores t
   let importing; await React.act(async () => {importing = f.model.importFile(new env.window.File(['fixture'], 'game.zip'));});
   assert.equal(element('gameDataImportWindow').getAttribute('aria-busy'), 'true'); assert.equal(element('gameDataImportBusy').hidden, false);
   assert.equal(element('gameDataImportBusy').getAttribute('role'), 'status'); assert.equal(element('gameDataImportBusy').getAttribute('aria-live'), 'polite');
-  assert.equal(element('gameDataImportBusyText').textContent, f.text('package.importing'));
+  assert.equal(element('gameDataImportBusyText').textContent, f.text('package.importing').replace(/…$/, '...'));
+  assert.equal(element('gameDataImportBusy').querySelectorAll('.loading-activity img').length, 4);
   for (const id of ['gameDataImportClose', 'transferImport', 'transferDownload']) assert.equal(element(id).disabled, true);
   await click('gameDataImportClose'); assert.equal(element('gameDataImportWindow').hidden, false);
   await React.act(async () => {pending.resolve(Promise.reject(new Error('fixture bad ZIP'))); await importing;});

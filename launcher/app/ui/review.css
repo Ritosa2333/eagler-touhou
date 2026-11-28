@@ -125,3 +125,8 @@
 }
 
 .catalog-directory-filter-example{max-width:460px}
+.loading-activity-preview {display:grid;grid-template-rows:auto 1fr;min-block-size:100dvh;background:var(--kit-background);}
+.loading-activity-preview > .player-loading-cover {position:relative;inset:auto;}
+.loading-activity-preview-tools {display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:8px;padding:12px 16px;}
+.loading-activity-preview-picker {display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px;max-inline-size:100%;}
+.loading-activity-preview-picker .ui-kit-select-trigger {min-inline-size:0;inline-size:12.625rem;max-inline-size:100%;min-block-size:44px;}

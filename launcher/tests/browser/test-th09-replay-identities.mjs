@@ -38,7 +38,8 @@ const browser = await puppeteer.launch({headless:true, executablePath:await find
 
 async function openProfile({width, member, scale = 1}) {
   const page = await browser.newPage();
-  await page.setViewport({width, height:820, deviceScaleFactor:scale});
+  const mobile = width <= 390;
+  await page.setViewport({width, height:width >= 1440 ? 1080 : 820, deviceScaleFactor:scale, isMobile:mobile, hasTouch:mobile});
   await page.emulateMediaFeatures([
     {name:'prefers-color-scheme',value:'dark'},
     {name:'prefers-reduced-motion',value:'reduce'},
@@ -47,7 +48,10 @@ async function openProfile({width, member, scale = 1}) {
   await page.setRequestInterception(true);
   page.on('request', request => {
     const url = new URL(request.url());
-    if (url.origin !== origin.origin || !url.pathname.startsWith('/api/')) return request.continue();
+    if (url.origin !== origin.origin) return request.continue();
+    if (url.pathname === '/release-catalog.json') return request.respond({status:200, contentType:'application/json',
+      body:JSON.stringify({schema:'eagler-touhou/release-catalog/1', games:{}})});
+    if (!url.pathname.startsWith('/api/')) return request.continue();
     const avatar = url.pathname.split('/').at(-1);
     if (avatar === alice.avatar || avatar === bob.avatar) {
       const palette = avatar === alice.avatar ? ['#842249','#ffc3d1','#ed6084'] : ['#235b9d','#c3edff','#54a5f0'];
@@ -77,6 +81,11 @@ async function openProfile({width, member, scale = 1}) {
   return page;
 }
 
+async function toggle(set) {
+  const trigger = await set.evaluateHandle(panel => document.querySelector(`button[aria-controls="${panel.id}"]`));
+  await trigger.asElement().click();
+}
+
 async function expand(page, index) {
   let groups = await page.$$(group);
   if (!groups[index]) {
@@ -85,8 +94,9 @@ async function expand(page, index) {
     groups = await page.$$(group);
   }
   const set = groups[index];
-  await (await set.$('summary')).click();
-  await set.waitForSelector('ol > li');
+  await toggle(set);
+  await set.waitForSelector('ol > li', {visible:true});
+  assert.equal(await set.evaluate(panel => panel.dataset.open), 'true');
   return set;
 }
 
@@ -165,6 +175,9 @@ try {
   assert.equal(await hidden.$('.th09-replay-avatar'), null, 'Do not fall back to IDs when the profiles are hidden');
   const noIdentity = await expand(narrow, 4);
   assert.equal(await noIdentity.$('.th09-replay-avatar'), null, 'Do not guess seats if the replay API returns no identities');
+  await toggle(noIdentity);
+  await narrow.waitForFunction(id => document.getElementById(id).inert, {}, await noIdentity.evaluate(panel => panel.id));
+  assert.equal(new URL(narrow.url()).pathname, '/u/bob', 'Expanding and closing rounds stays on the profile');
   await narrow.close();
 
   const guest = await openProfile({width:960, member:false});
