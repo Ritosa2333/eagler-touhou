@@ -1,5 +1,5 @@
 import { useDocumentUiLocale } from './navigation/document-locale';
-import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLocation, useNavigate } from 'react-router';
+import { Links, Meta, Outlet, Scripts, ScrollRestoration, useHref, useLocation, useNavigate } from 'react-router';
 import { useEffect, useRef, lazy, Suspense, type ReactNode } from 'react';
 import { BrowserLauncher } from './BrowserLauncher';
 import {
@@ -57,6 +57,7 @@ export function Layout({ children }: { children: ReactNode }) {
   const review = !previewOnly && (/\/ui-review\.html\/?$/.test(pathname) || isStandalonePage(pathname));
   const home = previewOnly || isLauncherHomePath(pathname);
   const locale = useDocumentUiLocale();
+  const tabIcon = useHref('/assets/favicon.ico');
   const lobby = /\/(?:lobby|lobby\.html)\/?$/.test(pathname);
   // Original boot owns removal. Keep this initial prop constant so later SPA
   // route renders cannot reintroduce the document's retired loading gate.
@@ -75,6 +76,7 @@ export function Layout({ children }: { children: ReactNode }) {
     >
       <head>
         <meta charSet="utf-8" />
+        <link rel="icon" type="image/x-icon" href={tabIcon} />
         <style id="ui-style-layers">{'@layer properties,foundation,theme,base,components,utilities;'}</style>
         <style id="ui-document-entrance">{documentEntranceCss}</style>
         <script suppressHydrationWarning>{documentEntranceScript}</script>
