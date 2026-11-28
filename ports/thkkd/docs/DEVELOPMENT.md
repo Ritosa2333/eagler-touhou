@@ -17,6 +17,12 @@ node launcher/scripts/serve-static.mjs ports/thkkd/build/site 8174
 
 本作按需参与构建，站点脚本显式选择 `thkkd` 并使用 `--test-build=1` 组装验证站点，游戏 Runtime 模式为 `normal`。默认全作品发布流程沿用已有游戏清单。
 
+## 热路径与保存路径
+
+单机 Runtime 的绘制调用不再在 `GameplayHostPlatform::call` 前后做三次内存同步；纯像素绘制走 `pixel_drawing`。三角函数不检查大参数和归约指数，`WebHost` 的参数与文本访问直接使用下标，关闭高刷时跳过绘制身份标注。内存读写使用页／span 索引，不执行整体 `range()` 覆盖校验。
+
+保存菜单扫描空录像槽时 `create_file` 会收到空路径指针。`WebHost::create_file` 对空路径返回无效句柄，保持旧 `range()` 抛出故障后被原有 `try/catch` 捕获的行为；普通键盘和 `--free-touch` 保存路径都实际写入并重新载入录像。当前构建为 `fa7c19ab`，验证记录见[热路径清理与保存修复](../../../archive/thkkd-performance-20261128/README.md)。
+
 ## 资源与显示
 
 网页导入两份独立 DXA 文件或原版 ZIP。启动器的 `thkkd-original`、`thkkd-dxa` 和 `thkkd-image` 模块读取 DXA v3/v4，按 `launcher/src/launcher/thkkd-original-assets.json` 校验 327 项内容，生成 301 项运行资源。这份清单由启动器统一维护，支持只检出启动器与公共目录的前端构建。原始图片与遮罩生成 PNG，四段 WMV 使用仓库内的专用 FFmpeg 内核在本机转为 VP8 WebM，MP3 和 WAV 使用原字节。游戏资源保留在本机被忽略的 `assets` 或 `content` 中。

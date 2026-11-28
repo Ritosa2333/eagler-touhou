@@ -1,0 +1,26 @@
+{
+  "schema": "thkkd/validation/1",
+  "date": "2026-11-28",
+  "sourceCommit": "fa7c19ab",
+  "baseCommit": "21c9eac7",
+  "buildId": "cfc860d7f88937618670ac708c0317b79ebca4cbaea404054957934f4830f989",
+  "wasmSha256": "c0e84d19314d49b2f6886d93109948d1f3eb6ba25abd5e349903674a18fee223",
+  "delivery": "exports/web/local-test-20261128-r10-norange",
+  "zipSha256": "56b5f1221b79cea753e23f5699dc42644bd9e39c64102a9c646b4d0c09ef7130",
+  "categories": {
+    "T01": {"result": "passed", "cases": 6, "steps": 526195, "checks": ["normal-speed-pause-and-resume", "original-and-extended-play-to-last-input", "native-cursor-continuity", "launcher-reports-ended", "no-steps-after-end"]},
+    "T02": {"result": "passed", "rows": 57, "checks": 5},
+    "T03": {"result": "passed", "pausedHz": 59.63844194614583, "seekingHz": 57.684282873820216},
+    "T04": {"result": "passed", "checks": 8},
+    "T05": {"result": "passed", "importSeconds": 262.511, "assets": 301, "mp3": 18, "webm": 4, "packageChecks": 4, "installedChecks": 3},
+    "T06": {"result": "passed", "progressChecks": 4, "storageChecks": 3},
+    "T07": {"result": "passed", "system": true, "flowNative": true, "flowTouch": true, "savedNative": {"path": "replay/thkkd00.rpy", "bytes": 106, "count": 44}, "savedTouch": {"path": "replay/thkkd00.thkkdr", "bytes": 574, "count": 26}, "stages": 8},
+    "T08": {"result": "passed", "inputChecks": 35, "dialogue": true},
+    "T09": {"result": "passed", "unitTests": 9, "presentationChecks": 6, "highRefreshChecks": 5, "cadences": [60, 120, 144, 240]},
+    "T10": {"result": "passed", "checks": 4},
+    "T11": {"result": "passed", "cases": 60, "steps": 835289},
+    "T12": {"result": "passed", "sourceInventoryTests": 2, "deliveryStarted": true},
+    "T13": {"result": "passed", "checks": 10},
+    "T14": {"result": "passed", "tests": 23}
+  }
+}

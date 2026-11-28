@@ -17,9 +17,13 @@
 | BUILD-01 | [源码目录与普通版／MP归属](../../docs/adaptation/build.md#build-01) | 已验证 | normal：普通版目录、构建配方与源码输入归属一致；[公共接口检查](../../docs/adaptation/status.json)。 |
 | BUILD-02 | [工具链与外部依赖](../../docs/adaptation/build.md#build-02) | 已验证 | normal：Emscripten 6.0.9、Node.js 24.19.0、Bun 1.4.4 及字体依赖按开发指南完成构建；视频转换使用固定 Emscripten 3.1.40 编译的专用 FFmpeg 5.1.4／libvpx 1.13.1；[转码验收](../../archive/thkkd-video-core-20261127/README.md)。 |
 | BUILD-03 | [对应模式独立构建](../../docs/adaptation/build.md#build-03) | 已验证 | normal：normal WASM 与启动器独立构建通过；本作只有单机模式；[构建与接入记录](../../archive/thkkd-import-20261126/README.md)。 |
-| BUILD-04 | [Runtime 文件与来源记录](../../docs/adaptation/build.md#build-04) | 已验证 | normal：当前 28 项 Runtime 文件、611 项 C++ 输入与构建记录一致；正式 WASM 与 r7 相同，诊断写入接口单独构建。 [高刷验收](../../archive/thkkd-high-refresh-20261127/README.md)。 |
+| BUILD-04 | [Runtime 文件与来源记录](../../docs/adaptation/build.md#build-04) | 已验证 | normal：当前 28 项 Runtime 文件、611 项 C++ 输入与构建记录一致；本轮 buildId `cfc860d7f88937618670ac708c0317b79ebca4cbaea404054957934f4830f989`，WASM SHA-256 `C0E84D19314D49B2F6886D93109948D1F3EB6BA25ABD5E349903674A18FEE223`；[本轮验收](../../archive/thkkd-performance-20261128/README.md)。 |
 | BUILD-05 | [前端搭配单个游戏运行](../../docs/adaptation/build.md#build-05) | 已验证 | normal：单作品站点实际启动，以及四种前端隔离构建、10 项检查通过；[r5 验收](../../archive/thkkd-web-only-20261126/R5-FINAL.md)。 |
 | BUILD-06 | [源码与素材来源](../../docs/adaptation/build.md#build-06) | 待验证 | normal：源码基线、素材位置与哈希已登记；见[来源登记](../../docs/migration/thkkd-file-import-20261126.md)及[第三方来源](THIRD_PARTY.md)。 |
+
+## 近期专项
+
+2026-11-28 的单机热路径清理以 r10 `21c9eac7` 为基线，源码提交 `fa7c19ab`。平台绘制调用去除三次内存同步，三角函数和平台参数访问去除范围检查，内存读写改为页／span 索引；关闭高刷时不再写绘制身份。保存菜单空路径在 `create_file` 中按无效句柄处理。验证记录见[热路径清理与保存修复](../../archive/thkkd-performance-20261128/README.md)，覆盖 T01、T02、T03、T04、T05、T06、T07、T08、T09、T10、T11、T12、T13、T14。
 
 ## 启动与资源
 
