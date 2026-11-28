@@ -1,0 +1,28 @@
+--- caller-window.cpp
++++ caller-control-window.cpp
+@@ -47,7 +47,7 @@
+ 
+ FILE* OpenLog() {
+   FILE* file=nullptr;
+-  fopen_s(&file,"D:/Temp/native-performance-20261128/client-info/caller-events.jsonl","a");
++  fopen_s(&file,"D:/Temp/native-performance-20261128/client-info/caller-control-events.jsonl","a");
+   return file;
+ }
+ void Mark(const char* label) {
+@@ -180,7 +180,7 @@
+ }
+ void CALLBACK SampleTimer(HWND hwnd,UINT,UINT_PTR id,DWORD) {
+   Snapshot();
+-  if(++sample_count==6) {
++  if(++sample_count==12) {
+     KillTimer(hwnd,id);Mark("close_requested");PostMessage(hwnd,WM_CLOSE,0,0);
+   }
+ }
+@@ -203,6 +203,7 @@
+   }
+ 
+   SetWindowLongPtr(GetHandle(),GWL_EXSTYLE,GetWindowLongPtr(GetHandle(),GWL_EXSTYLE)|WS_EX_NOACTIVATE);
++  SetWindowText(GetHandle(), L"TouhouOnline | caller control");
+   RECT frame = GetClientArea();
+ 
+   // The size here must match the window dimensions to avoid unnecessary surface

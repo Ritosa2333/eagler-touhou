@@ -1,0 +1,119 @@
+{
+  "sourceCommit": "9bf2d6ace5dbc4d6aeb8a31c37fd104c7ac6a026",
+  "scope": "Two self-closing, nonactivating native diagnostic runners use ordinary production Dart AOT and isolated Windows application metadata. One passive run and one read-only Computer Use accessibility-state control. No activation or input in the current user preview.",
+  "isolatedCompany": "com.touhouonline.diagnostics",
+  "isolatedProduct": "caller-20261128",
+  "profileIsolationBasis": [
+    "path_provider_windows2.3.0 derives support directory from CompanyName/ProductName",
+    "shared_preferences_windows2.4.1 stores its JSON in that directory",
+    "flutter_secure_storage_windows4.2.2 DPAPI JSON storage uses getApplicationSupportDirectory",
+    "No credentials entered or session imported"
+  ],
+  "aotSha256": "93968c238086dfe40a6725bf2fe048bda672d15bfcd9293134e79986290c2e05",
+  "engineSha256": "81d227453d4e34da29e399c62d615091ffc712e54fb2ec20010c1c95487e90b6",
+  "diagnosticExeSha256": {
+    "caller": "4c6c53657171b2ea8647ef4cf475fd870c830e697656aefbeecf612f928f681c",
+    "caller-control": "90b3a17163fead8cf9a8930a34b24ae8c18fe017aff86e01c9b1ffa41fa8f467"
+  },
+  "unchangedProductSourceFiles": 113,
+  "unchangedWindowsPackageSha256": "2e39acda9dfe2b13c9dbb99b4219a53b7000200ef1d8724734eafd50b0d10e79",
+  "runs": [
+    {
+      "name": "caller",
+      "pid": 41968,
+      "samples": 6,
+      "foregroundSampleCount": 0,
+      "childGetObject": 0,
+      "wholeThreadGetObject": 0,
+      "childMsaaGetObject": 0,
+      "childUiaGetObject": 0,
+      "childOtherGetObject": 0,
+      "incomingComFilterCallbacks": 0,
+      "clientConnections": [],
+      "requestToEngineDestroyedMs": 78,
+      "kernelTerminationVerified": true,
+      "forcedTermination": false,
+      "oneCorePercentByInterval": [
+        0.625,
+        0.6231306081754736,
+        0.6268806419257773,
+        0.625,
+        1.25
+      ],
+      "counterBySnapshot": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "caller-control",
+      "pid": 55220,
+      "samples": 12,
+      "foregroundSampleCount": 0,
+      "childGetObject": 387,
+      "wholeThreadGetObject": 451,
+      "childMsaaGetObject": 376,
+      "childUiaGetObject": 9,
+      "childOtherGetObject": 2,
+      "incomingComFilterCallbacks": 0,
+      "clientConnections": [
+        {
+          "pid": 60848,
+          "pidHr": 0,
+          "nameHr": 0,
+          "name": "codex-computer-use.exe"
+        }
+      ],
+      "requestToEngineDestroyedMs": 63,
+      "kernelTerminationVerified": true,
+      "forcedTermination": false,
+      "oneCorePercentByInterval": [
+        0.9375,
+        2.1875,
+        0.0,
+        0.9375,
+        1.875,
+        0.3125,
+        1.5625,
+        2.1875,
+        0.3125,
+        1.875,
+        0.9375
+      ],
+      "counterBySnapshot": [
+        0,
+        0,
+        387,
+        387,
+        387,
+        387,
+        387,
+        387,
+        387,
+        387,
+        387,
+        387
+      ]
+    }
+  ],
+  "conclusions": [
+    "IUIAutomationClientInfoSource identified the known read-only inspection client during the control run",
+    "The UI thread IMessageFilter did not receive callbacks despite known cross-process accessibility queries; it cannot identify this query route",
+    "A persistent UIA connection in this background control did not imply continued WM_GETOBJECT counter growth"
+  ],
+  "limits": [
+    "Foreground PID sampled only every5seconds; not continuous focus monitoring",
+    "Background controls do not reproduce sustained foreground CPU or identify the historical sender",
+    "WM_GETOBJECT timing covers object acquisition, not later accessibility attribute calls",
+    "No engine replacement, accessibility suppression, rendering-path change or whole-app performance improvement claimed"
+  ],
+  "sources": {
+    "incomingCall": "https://learn.microsoft.com/en-us/windows/win32/api/objidl/nf-objidl-imessagefilter-handleincomingcall",
+    "registration": "https://learn.microsoft.com/en-us/windows/win32/api/objbase/nf-objbase-coregistermessagefilter",
+    "clients": "https://learn.microsoft.com/en-us/windows/win32/api/uiautomationcore/nf-uiautomationcore-iuiautomationclientinfosource-getconnectedclients"
+  }
+}

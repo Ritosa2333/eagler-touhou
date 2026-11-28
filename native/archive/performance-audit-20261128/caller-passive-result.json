@@ -1,0 +1,200 @@
+{
+  "pid": 41968,
+  "observations": [
+    {
+      "elapsed": 1.0052028000063729,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 2.0151291000001947,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 3.0213161000065156,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 4.029488500003936,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 5.040032100005192,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 6.051154600005248,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 7.052219300006982,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 8.064995600005204,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 9.07538540000678,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 10.087102700003015,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 11.088765200001944,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 12.099094800003513,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 13.106075800002145,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 14.111770100003923,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 15.113815500000783,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 16.128435600003286,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 17.137056600004144,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 18.145626500001526,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 19.153381400006765,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 20.16082180000376,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 21.1712331000017,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 22.179174200005946,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 23.187865100000636,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 24.199467900005402,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 25.20531110000593,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 26.2135791000037,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 27.2227034000025,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 28.23358370000642,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 29.248571500000253,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 30.261227400005737,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 31.27484650000406,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 32.223644200006675,
+      "wait": 0,
+      "getExitCodeOk": true,
+      "exitCode": 0
+    }
+  ],
+  "signaledWithin48s": true,
+  "testOnlyTerminated": false,
+  "finalWait": 0
+}

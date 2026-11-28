@@ -148,6 +148,8 @@ Dart AOT 读取两份已有真实资源，分别匹配固定版 th07 清单和�
 
 当前 Windows 产品显式禁用 Impeller，使用 Skia；该兼容设置源于本机早先白屏。FlClash 最新 main 在 Flutter 3.50 恢复了 Impeller，旧搜索结果中的禁用说明已过期。其维护记录同时说明：曾复现 Windows 冻结的机器未完成移除设置后的复验。[当前入口](https://github.com/chen08209/FlClash/blob/main/windows/runner/main.cpp) | [兼容记录](https://github.com/chen08209/FlClash/blob/main/.agents/flutter-upgrade.md#impeller-on-windows)
 
+本机正在运行的 FlClash 为 `0.9.4+2026111907`。只读核对其已加载路径对应的引擎与当前 SDK：两份 DLL 均为 21,332,480 字节，`.text` 的 16,625,152 字节全部一致，摘要为 `bc78ae5150e044536548a97aa3329fbf0a8b7ea04c46fab969a51171230db02c`。全部 65 个不同字节归属于嵌入的引擎版本字符串、COFF／调试时间戳和 PDB GUID；在内存副本中归零这些字段后，剩余字节全部相同。版本字符串分别为 `4d35714800b9266b6693a58e1225ecd7e9e45ed7` 和 `371f77202a73e8dff57a8b3bff75bca55c090aee`，不据机器代码相同推断源码提交相同。这个结果支持继续检查应用状态、查询负载和渲染路径，DLL 本身不能证明运行时选用了 Skia 或 Impeller。[已安装版本](engine-installed-flclash-version.json) | [逐区段及字段比较](engine-installed-engine-comparison.json) | [只读比较程序](engine-compare-installed-engine.py)
+
 本机分别编译启用和禁用 Impeller 的原生入口，采用同一份诊断 Release AOT、引擎、插件、资源及高性能 GPU 偏好。两者运行生产 LauncherApp，使用隔离游客偏好与路径，均执行 32 类实际页面操作。窗口焦点每 100 ms 记录；测量期间没有构建、全量轨迹或截图读回。Skia 全程前台，Impeller 两轮均主要在后台；一次系统前台 PID 查询确认是其他应用。焦点条件不匹配，耗时不能用于判断哪种渲染器更快。此入口不包含生产 main 的全部初始化，bootstrap 不代表进程启动或可交互时间。[来源与哈希](renderer-source.json) | [全部分阶段原始统计](renderer-summary.json)
 
 | 渲染路径 | 完成的操作类别 | 前台样本 |
@@ -168,6 +170,14 @@ Dart AOT 读取两份已有真实资源，分别匹配固定版 th07 清单和�
 当前 Windows 可以创建 `IUIAutomationClientInfoSource`，两轮共十二次读取均返回成功且数组为空。该接口提供调用时的连接快照，本结果没有识别出此前查询的发送者，也没有证明 MSAA 消费者不存在。声明取自微软元数据，未更换产品 SDK、依赖或无障碍实现。[接口约定](https://learn.microsoft.com/en-us/windows/win32/api/uiautomationcore/nf-uiautomationcore-iuiautomationclientinfosource-getconnectedclients) | [声明来源](client-metadata.json)
 
 两轮从关闭请求到引擎销毁标记分别为 141 和 266 ms，进程句柄均进入终止状态，没有强制结束测试进程。它们补充了当前 AOT 的正常退出样本，间歇性的驱动释放问题继续保留；未改动共享图形资源的生命周期，也没有操作原有预览窗口。[内核终止记录一](client-host-result.json) | [记录二](client-thread-result.json)
+
+## 无障碍查询的已知客户端对照
+
+新增两轮后台诊断使用相同普通 AOT，以 Windows 应用元数据隔离偏好和安全存储。被动轮六次快照均未记录到 `WM_GETOBJECT` 或已连接客户端。主动轮只对隔离窗口读取一次可访问性状态，十二次快照均在后台；第三次起，连接快照准确列出 `codex-computer-use.exe`，子窗口记录 387 次取对象消息，全线程为 451 次。随后九次快照的取对象计数不再增长，连接快照仍显示该客户端。由此验证了连接接口能够识别这个已知客户端，也区分了「保持连接」和「持续发出取对象消息」。[统计与范围](caller-summary.json) | [被动轮](caller-passive-events.jsonl) | [已知客户端轮](caller-control-events.jsonl)
+
+这两轮在 UI 线程注册的 `IMessageFilter` 均返回成功，关闭时恢复前一个过滤器；主动轮实际发生跨进程无障碍查询，但该过滤器收到零次回调。因此不将它用于这条查询路径的发送者识别，也不以零回调证明没有查询。[诊断源码](caller-observer.cpp) | [主动轮差异](caller-control.patch) | [微软接口约定](https://learn.microsoft.com/en-us/windows/win32/api/objidl/nf-objidl-imessagefilter-handleincomingcall)
+
+关闭请求到引擎销毁分别为 78 和 63 ms，两轮内核进程句柄均正常终止。前台 PID 每五秒采样，取对象计时不覆盖其后属性读取；这里的后台对照没有复现持续前台开销，也没有确认历史查询发送者。产品 113 个交付源码与 Windows 程序包哈希全部不变。
 
 ## 引擎调用栈的离线符号定位
 

@@ -160,7 +160,23 @@
     "symbols-build-conversion.cmd": "46eb92275672305aafbf5cb3d7b195f49202ea7b375939a7385a918f80686b9d",
     "symbols-build-conversion-static.log": "e2f686f87fdf824f6b06ac04c5c3c54c421b698001bcaea3e8451ae5832fcdde",
     "symbols-conversion-results.jsonl": "f9f3cf2fd362795c7e1844432a16c1a0b40d15a289ae3be42cf56e1a299e5f06",
-    "symbols-summary.json": "dd7814c38b445712d11949a39812276c4003a8bccf9f1f1d4031d72b9033be3d"
+    "symbols-summary.json": "dd7814c38b445712d11949a39812276c4003a8bccf9f1f1d4031d72b9033be3d",
+    "caller-observer.cpp": "354dcd85c14e6a7511c27c34e1b3726c9b927852e6e5152b09f9034df104ea6b",
+    "caller-control.patch": "1995b94e11375c5ae99d6e3793eb6ed1d80a2d0a92fab68c66f6790cd2f2da85",
+    "caller-prepare.py": "975e0addf8b8253a0076d81d5a1bbdd952cb95d06046a424cbbc97c01fa0f014",
+    "caller-prepare-control.py": "22327fb3d6b400d377281c1c58f743524889eb5e89f4e987592010760d19e1cd",
+    "caller-run-passive.py": "854e64cba10c0b6d412ad63a69f84ec7585f244f03dcad1ff76ce1bdcbb9f04b",
+    "caller-run-control.py": "1f6f9556d40569232cd19738661ca9a0bab81e4da73af4e3d31f9074bea0f5b3",
+    "caller-build-passive.log": "95287116dc5afab42bc35f4e45106031647479f9f44c026c4e80121062f2cc08",
+    "caller-build-control.log": "0f824b2f7f9e987cfca84845a73730cd05afc07eaaa4a360f64a7f6021990085",
+    "caller-passive-events.jsonl": "1ed3f1c7f7ded642010131b022e74c16c752a3569cc657f54f746b59890e04c0",
+    "caller-control-events.jsonl": "f41ab37a564916a3f8e3812bc21eda50318f1c47d689ea82e1795950b1611465",
+    "caller-passive-result.json": "082a99f38b199b06aa9261240f82fbeb0f98f84f3a28430eb39c38e085a5f659",
+    "caller-control-result.json": "5fc60b51a3d7f925edb61c565a08f7cb159d905aa8a97c43f62714b0fc8225b9",
+    "caller-summary.json": "a3125d1e3c704ad022bc7665167f3ae7a1a14745132965ac227781e982cc6802",
+    "engine-compare-installed-engine.py": "27d5b22cddb901fcec2c79fd26f612652f5cc0649742cea9e74da45d66ac7e32",
+    "engine-installed-engine-comparison.json": "4f7616809e6c49ef62418b4ba6bbb58c96eff27d2e51eaa4345b3649472d3aa1",
+    "engine-installed-flclash-version.json": "655f14dccc9458b120929c63591cc96a435be7856fec44fe6205fa7109f968c0"
   },
   "tracing": "Profile trace was captured before PERF_TRACE became optional. Reproduction needs --profile --trace-skia --endless-trace-buffer --dart-define=PERF_TRACE=true. Never use the traced process working set as ordinary app memory. Release target defaults to no tracing.",
   "browser": "Original public-profile native adapter A/B retained. New isolated Windows Debug account integration passes two visits and eight width states with native return to th08. Progressive screenshots include a real 320 px guest login form; other widths captured during loading. No credentials entered.",
@@ -476,5 +492,15 @@
     "exactPdbMatch": true,
     "engineChanged": false,
     "applicationSourceChanged": false
+  },
+  "installedEngineComparison": {
+    "summary": "engine-installed-engine-comparison.json",
+    "machineCodeEqual": true,
+    "sourceRevisionIdentityClaimed": false
+  },
+  "callerQueryControl": {
+    "summary": "caller-summary.json",
+    "scope": "Two self-closing, nonactivating native diagnostic runners use ordinary production Dart AOT and isolated Windows application metadata. One passive run and one read-only Computer Use accessibility-state control. No activation or input in the current user preview.",
+    "productSourceUnchanged": true
   }
 }

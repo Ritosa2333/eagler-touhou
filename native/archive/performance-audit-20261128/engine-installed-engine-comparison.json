@@ -1,0 +1,315 @@
+{
+  "scope": "Read-only installed engine comparison. No running process interaction, binary replacement or renderer selection inference. Embedded engine revision differs; machine code equality does not establish source commit identity.",
+  "current": {
+    "path": "D:\\workspace\\eagler\\toolchains\\flutter-stable\\bin\\cache\\artifacts\\engine\\windows-x64-release\\flutter_windows.dll",
+    "sha256": "81d227453d4e34da29e399c62d615091ffc712e54fb2ec20010c1c95487e90b6",
+    "bytes": 21332480,
+    "sections": {
+      ".text": {
+        "rva": 4096,
+        "virtualBytes": 16625118,
+        "offset": 1024,
+        "bytes": 16625152,
+        "sha256": "bc78ae5150e044536548a97aa3329fbf0a8b7ea04c46fab969a51171230db02c"
+      },
+      "malloc_h": {
+        "rva": 16629760,
+        "virtualBytes": 379,
+        "offset": 16626176,
+        "bytes": 512,
+        "sha256": "75b855b2fb9b7712b4d276a025e7e803667b8b95e8b40c97a081f98d40b4fb16"
+      },
+      ".rdata": {
+        "rva": 16633856,
+        "virtualBytes": 3724980,
+        "offset": 16626688,
+        "bytes": 3725312,
+        "sha256": "8d7a659816d34b435389da817b0a662c1b104ac4c5c1cfe79a251966136e28a6"
+      },
+      ".data": {
+        "rva": 20361216,
+        "virtualBytes": 460752,
+        "offset": 20352000,
+        "bytes": 363008,
+        "sha256": "2dfa5ff7fd210b8416cf96b0aaa2480c391cd33deb4097cdbb86db5b32b3ed51"
+      },
+      ".pdata": {
+        "rva": 20824064,
+        "virtualBytes": 493404,
+        "offset": 20715008,
+        "bytes": 493568,
+        "sha256": "4dbbc77dca6e88d0e43a1ee437a16b72dfbd9f65df816e279553a8fa0a90f9a5"
+      },
+      "_RDATA": {
+        "rva": 21319680,
+        "virtualBytes": 348,
+        "offset": 21208576,
+        "bytes": 512,
+        "sha256": "02af06a41b79f7e94d3693864a5dba43ec4d6af785f07109cb827d6fc15846ce"
+      },
+      ".reloc": {
+        "rva": 21323776,
+        "virtualBytes": 123076,
+        "offset": 21209088,
+        "bytes": 123392,
+        "sha256": "f28e6c9e0be765ddcce7985fb366ab4262f29becef4f7f6bc75e70a5e66f7c8f"
+      }
+    },
+    "metadata": [
+      {
+        "name": "COFF TimeDateStamp",
+        "offset": 272,
+        "bytes": 4,
+        "hex": "e25bfd6a"
+      },
+      {
+        "name": "Embedded engine revision string",
+        "offset": 17464520,
+        "bytes": 40,
+        "hex": "34643335373134383030623932363662363639336135386531323235656364376539653435656437"
+      },
+      {
+        "name": "Export TimeDateStamp",
+        "offset": 20332020,
+        "bytes": 4,
+        "hex": "ffffffff"
+      },
+      {
+        "name": "Debug[0] TimeDateStamp",
+        "offset": 20232868,
+        "bytes": 4,
+        "hex": "e25bfd6a"
+      },
+      {
+        "name": "Debug[0] CodeView PDB GUID",
+        "offset": 20247800,
+        "bytes": 16,
+        "hex": "478787d7dfe16d409b77ff1459176f1a"
+      },
+      {
+        "name": "Debug[1] TimeDateStamp",
+        "offset": 20232896,
+        "bytes": 4,
+        "hex": "e25bfd6a"
+      },
+      {
+        "name": "Debug[2] TimeDateStamp",
+        "offset": 20232924,
+        "bytes": 4,
+        "hex": "e25bfd6a"
+      }
+    ],
+    "debugDirectories": [
+      {
+        "type": 2,
+        "offset": 20232864,
+        "payloadOffset": 20247796,
+        "payloadBytes": 105,
+        "guid": "d7878747-e1df-406d-9b77-ff1459176f1a",
+        "age": 1,
+        "pdb": "C:\\b\\s\\w\\ir\\cache\\builder\\engine\\src\\out\\ci\\host_release\\flutter_windows.dll.pdb"
+      },
+      {
+        "type": 12,
+        "offset": 20232892,
+        "payloadOffset": 20247904,
+        "payloadBytes": 20
+      },
+      {
+        "type": 13,
+        "offset": 20232920,
+        "payloadOffset": 20247924,
+        "payloadBytes": 1256
+      }
+    ]
+  },
+  "installedFlClash": {
+    "path": "C:\\Program Files\\FlClash\\flutter_windows.dll",
+    "sha256": "a82241d4c548ac20229eb8a46e7442c22e6b94f1f1415369c3813e903a345d1e",
+    "bytes": 21332480,
+    "sections": {
+      ".text": {
+        "rva": 4096,
+        "virtualBytes": 16625118,
+        "offset": 1024,
+        "bytes": 16625152,
+        "sha256": "bc78ae5150e044536548a97aa3329fbf0a8b7ea04c46fab969a51171230db02c"
+      },
+      "malloc_h": {
+        "rva": 16629760,
+        "virtualBytes": 379,
+        "offset": 16626176,
+        "bytes": 512,
+        "sha256": "75b855b2fb9b7712b4d276a025e7e803667b8b95e8b40c97a081f98d40b4fb16"
+      },
+      ".rdata": {
+        "rva": 16633856,
+        "virtualBytes": 3724980,
+        "offset": 16626688,
+        "bytes": 3725312,
+        "sha256": "62d3fb1944ec5ad9b74c72172d958c1e303da869db3be0ec84e773835a9e4803"
+      },
+      ".data": {
+        "rva": 20361216,
+        "virtualBytes": 460752,
+        "offset": 20352000,
+        "bytes": 363008,
+        "sha256": "2dfa5ff7fd210b8416cf96b0aaa2480c391cd33deb4097cdbb86db5b32b3ed51"
+      },
+      ".pdata": {
+        "rva": 20824064,
+        "virtualBytes": 493404,
+        "offset": 20715008,
+        "bytes": 493568,
+        "sha256": "4dbbc77dca6e88d0e43a1ee437a16b72dfbd9f65df816e279553a8fa0a90f9a5"
+      },
+      "_RDATA": {
+        "rva": 21319680,
+        "virtualBytes": 348,
+        "offset": 21208576,
+        "bytes": 512,
+        "sha256": "02af06a41b79f7e94d3693864a5dba43ec4d6af785f07109cb827d6fc15846ce"
+      },
+      ".reloc": {
+        "rva": 21323776,
+        "virtualBytes": 123076,
+        "offset": 21209088,
+        "bytes": 123392,
+        "sha256": "f28e6c9e0be765ddcce7985fb366ab4262f29becef4f7f6bc75e70a5e66f7c8f"
+      }
+    },
+    "metadata": [
+      {
+        "name": "COFF TimeDateStamp",
+        "offset": 272,
+        "bytes": 4,
+        "hex": "bf0af26a"
+      },
+      {
+        "name": "Embedded engine revision string",
+        "offset": 17464520,
+        "bytes": 40,
+        "hex": "33373166373732303261373365386466663537613862336266663735626361353563303930616565"
+      },
+      {
+        "name": "Export TimeDateStamp",
+        "offset": 20332020,
+        "bytes": 4,
+        "hex": "ffffffff"
+      },
+      {
+        "name": "Debug[0] TimeDateStamp",
+        "offset": 20232868,
+        "bytes": 4,
+        "hex": "bf0af26a"
+      },
+      {
+        "name": "Debug[0] CodeView PDB GUID",
+        "offset": 20247800,
+        "bytes": 16,
+        "hex": "bea900705b186f4cbed637577f31fe8b"
+      },
+      {
+        "name": "Debug[1] TimeDateStamp",
+        "offset": 20232896,
+        "bytes": 4,
+        "hex": "bf0af26a"
+      },
+      {
+        "name": "Debug[2] TimeDateStamp",
+        "offset": 20232924,
+        "bytes": 4,
+        "hex": "bf0af26a"
+      }
+    ],
+    "debugDirectories": [
+      {
+        "type": 2,
+        "offset": 20232864,
+        "payloadOffset": 20247796,
+        "payloadBytes": 105,
+        "guid": "7000a9be-185b-4c6f-bed6-37577f31fe8b",
+        "age": 1,
+        "pdb": "C:\\b\\s\\w\\ir\\cache\\builder\\engine\\src\\out\\ci\\host_release\\flutter_windows.dll.pdb"
+      },
+      {
+        "type": 12,
+        "offset": 20232892,
+        "payloadOffset": 20247904,
+        "payloadBytes": 20
+      },
+      {
+        "type": 13,
+        "offset": 20232920,
+        "payloadOffset": 20247924,
+        "payloadBytes": 1256
+      }
+    ]
+  },
+  "differentByteCount": 65,
+  "classifiedDifferences": [
+    {
+      "name": "COFF TimeDateStamp",
+      "offset": 272,
+      "bytes": 4,
+      "differentBytes": 3,
+      "currentHex": "e25bfd6a",
+      "referenceHex": "bf0af26a"
+    },
+    {
+      "name": "Embedded engine revision string",
+      "offset": 17464520,
+      "bytes": 40,
+      "differentBytes": 37,
+      "currentHex": "34643335373134383030623932363662363639336135386531323235656364376539653435656437",
+      "referenceHex": "33373166373732303261373365386466663537613862336266663735626361353563303930616565"
+    },
+    {
+      "name": "Debug[0] TimeDateStamp",
+      "offset": 20232868,
+      "bytes": 4,
+      "differentBytes": 3,
+      "currentHex": "e25bfd6a",
+      "referenceHex": "bf0af26a"
+    },
+    {
+      "name": "Debug[0] CodeView PDB GUID",
+      "offset": 20247800,
+      "bytes": 16,
+      "differentBytes": 16,
+      "currentHex": "478787d7dfe16d409b77ff1459176f1a",
+      "referenceHex": "bea900705b186f4cbed637577f31fe8b"
+    },
+    {
+      "name": "Debug[1] TimeDateStamp",
+      "offset": 20232896,
+      "bytes": 4,
+      "differentBytes": 3,
+      "currentHex": "e25bfd6a",
+      "referenceHex": "bf0af26a"
+    },
+    {
+      "name": "Debug[2] TimeDateStamp",
+      "offset": 20232924,
+      "bytes": 4,
+      "differentBytes": 3,
+      "currentHex": "e25bfd6a",
+      "referenceHex": "bf0af26a"
+    }
+  ],
+  "unclassifiedDifferenceOffsets": [],
+  "equalSections": [
+    ".text",
+    "malloc_h",
+    ".data",
+    ".pdata",
+    "_RDATA",
+    ".reloc"
+  ],
+  "normalizedBuildProvenanceEqual": true,
+  "normalizedSha256": [
+    "c9c920df81455a990a2cccb559e0df28fcd33dc4a1e3c3f5b63fab783565ee66",
+    "c9c920df81455a990a2cccb559e0df28fcd33dc4a1e3c3f5b63fab783565ee66"
+  ],
+  "peSpecification": "https://learn.microsoft.com/en-us/windows/win32/debug/pe-format"
+}
